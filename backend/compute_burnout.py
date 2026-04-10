@@ -271,15 +271,11 @@ def main():
 
     print(f"Success. Analysis complete. Results in {OUTPUT_FILE}")
 
-import subprocess
-
-print("\nRunning recommendation engine...")
-subprocess.run(["python3", "recommendations.py"])
-# -----------------------------
-# Run Manager Insights
-# -----------------------------
-print("\nGenerating manager insights...")
-subprocess.run(["python3", "manager_insights.py"])
+    import subprocess
+    print("\nRunning recommendation engine...")
+    subprocess.run(["python", "recommendations.py"])
+    print("\nGenerating manager insights...")
+    subprocess.run(["python", "manager_insights.py"])
 
 if __name__ == "__main__":
     main()

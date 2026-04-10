@@ -80,15 +80,12 @@ def main():
     with open(INPUT_FILE) as f:
         rows = list(csv.DictReader(f))
 
-    with open(OUTPUT_FILE, "w", newline="") as f:
+    with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["employee_id", "date", "recommendations"])
 
         for r in rows:
             recs = generate_recommendations(r)
-
-            # Debug print (optional)
-            print(f"{r['employee_id']} ({r['date']}):", recs)
 
             writer.writerow([
                 r["employee_id"],

@@ -88,7 +88,7 @@ def main():
     # -----------------------------
     # WRITE MANAGER DASHBOARD
     # -----------------------------
-    with open(OUTPUT_FILE, "w", newline="") as f:
+    with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
 
         # Summary
@@ -123,7 +123,7 @@ def main():
     # -----------------------------
     # WRITE EMPLOYEE VIEW (for UI)
     # -----------------------------
-    with open(EMPLOYEE_OUTPUT, "w", newline="") as f:
+    with open(EMPLOYEE_OUTPUT, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow([
             "employee_id",
