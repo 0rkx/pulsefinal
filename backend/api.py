@@ -103,11 +103,18 @@ def get_users():
 @app.get("/api/login")
 def login(username: str):
     users = get_users()
-    user = users.get(username.lower())
+    target = username.lower()
+    # Case-insensitive lookup for ID
+    user = None
+    for uid, udata in users.items():
+        if uid.lower() == target:
+            user = udata
+            break
+            
     if not user:
         # Check by name matching if not found by ID
         for u in users.values():
-            if username.lower() in u["name"].lower():
+            if target in u["name"].lower():
                 return u
         return {"error": "User not found"}
     return user

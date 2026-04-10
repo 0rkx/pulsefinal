@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Brain, Flame, Timer, Target, Briefcase, Clock, Activity, Coffee, Check } from 'lucide-react';
+import { Brain, Flame, Timer, Target, Briefcase, Clock, Activity, Coffee, Check, User, Zap } from 'lucide-react';
 import { AppUser, EmployeeStat } from '../types';
 import { fetchEmployees } from '../api';
 
