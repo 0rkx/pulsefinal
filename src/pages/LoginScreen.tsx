@@ -147,7 +147,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: AppUser) => v
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <button
                                 onClick={(e) => handleLogin(e, 'm1', 'password')}
                                 disabled={isLoading}
@@ -175,10 +175,21 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: AppUser) => v
                                 disabled={isLoading}
                                 className="flex flex-col items-center justify-center p-3 bg-zinc-900/40 hover:bg-zinc-800 border border-zinc-800/80 rounded-xl transition-all group"
                             >
+                                <div className="bg-zinc-950 p-2 rounded-lg border border-zinc-800 mb-2 group-hover:border-rose-500/50 transition-colors">
+                                    <Briefcase className="w-4 h-4 text-zinc-400 group-hover:text-rose-400 transition-colors" />
+                                </div>
+                                <span className="text-sm font-medium text-zinc-300 text-center leading-tight">Employee<br /><span className="text-[10px] text-zinc-500 font-normal">(At Risk)</span></span>
+                            </button>
+
+                            <button
+                                onClick={(e) => handleLogin(e, 'e005', 'password')}
+                                disabled={isLoading}
+                                className="flex flex-col items-center justify-center p-3 bg-zinc-900/40 hover:bg-zinc-800 border border-zinc-800/80 rounded-xl transition-all group"
+                            >
                                 <div className="bg-zinc-950 p-2 rounded-lg border border-zinc-800 mb-2 group-hover:border-blue-500/50 transition-colors">
                                     <Briefcase className="w-4 h-4 text-zinc-400 group-hover:text-blue-400 transition-colors" />
                                 </div>
-                                <span className="text-sm font-medium text-zinc-300 text-center leading-tight">Employee<br /><span className="text-[10px] text-zinc-500 font-normal">(Priya)</span></span>
+                                <span className="text-sm font-medium text-zinc-300 text-center leading-tight">Employee<br /><span className="text-[10px] text-zinc-500 font-normal">(Stable)</span></span>
                             </button>
                         </div>
                     </div>

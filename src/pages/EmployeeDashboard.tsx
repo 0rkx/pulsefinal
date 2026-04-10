@@ -11,7 +11,18 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
         async function loadData() {
             setLoading(true);
             const emps = await fetchEmployees(); // Fetch all or filter by ID
-            const me = emps.find(e => e.id.toLowerCase() === user.id.toLowerCase()) || emps[0];
+            const me = emps.find(e => e.id.toLowerCase() === user.id.toLowerCase()) || {
+                id: user.id,
+                name: user.name,
+                role: user.role,
+                productivity: 85,
+                burnout: 15,
+                status: 'healthy',
+                managerId: '',
+                burnoutIndex: 1.5,
+                predictedBurnout: 'Stable',
+                deepWorkIndex: 80
+            };
             setEmpStats(me);
             setLoading(false);
         }
