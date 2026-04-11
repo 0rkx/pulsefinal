@@ -174,11 +174,26 @@ def main():
             eid = emp["employee_id"]
 
             # Slack
-            for i in range(profile["msg_count_work"] + profile["msg_count_social"] + profile["msg_count_dms"]):
+            work_msgs = profile["msg_count_work"]
+            social_msgs = profile["msg_count_social"]
+            dm_msgs = profile["msg_count_dms"]
+            
+            message_types = ["#work"] * work_msgs + ["#social"] * social_msgs + ["DM"] * dm_msgs
+            for msg_type in message_types:
                 msg_idx += 1
                 ts = after_hours_ts(dt) if profile["after_hours"] else dt.replace(hour=jitter_minutes(14)[0], minute=jitter_minutes(14)[1])
-                text = pick_message_text(profile["sentiment"], "#work")
-                slack_w.writerow([f"M{msg_idx:07d}", eid, fmt_ts(ts), "#work", len(text), "false", "", profile["sentiment"], text])
+                
+                # Pick tone based on type and sentiment
+                is_social = msg_type in ["#social", "DM"]
+                text = pick_message_text(profile["sentiment"], "#random" if is_social else "#work")
+                
+                if msg_type == "DM":
+                    recipient = f"E{random.randint(1, 30):03d}"
+                    slack_w.writerow([f"M{msg_idx:07d}", eid, fmt_ts(ts), "direct", len(text), "true", recipient, profile["sentiment"], text])
+                elif msg_type == "#social":
+                    slack_w.writerow([f"M{msg_idx:07d}", eid, fmt_ts(ts), "#random", len(text), "false", "", profile["sentiment"], text])
+                else: 
+                    slack_w.writerow([f"M{msg_idx:07d}", eid, fmt_ts(ts), "#work", len(text), "false", "", profile["sentiment"], text])
 
             # Jira
             for _ in range(profile["tickets_touched"]):

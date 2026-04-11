@@ -186,13 +186,13 @@ def compute_ensemble_score(behavioral, timeseries, anomaly, lstm):
         confidence = 0.5
 
     # Risk tier
-    if ensemble_prob > 0.75:
+    if ensemble_prob > 0.85:
         risk_tier = "CRITICAL"
-    elif ensemble_prob > 0.55:
+    elif ensemble_prob > 0.65:
         risk_tier = "HIGH"
-    elif ensemble_prob > 0.35:
+    elif ensemble_prob > 0.45:
         risk_tier = "MEDIUM"
-    elif ensemble_prob > 0.15:
+    elif ensemble_prob > 0.25:
         risk_tier = "LOW"
     else:
         risk_tier = "MINIMAL"

@@ -126,9 +126,9 @@ def main():
             conn = compute_connection(day, baselines[eid])
 
             if day["day_index"] >= BASELINE_DAYS:
-                # Weighted probability calculation
-                score = (frag * 0.05) + (rest_def * 0.5) - (rec_idx * 0.02)
-                raw_prob = 1.0 / (1.0 + math.exp(-(score - 3.0) / 2.0))
+                # Weighted probability calculation with re-anchored coefficients for realistic baseline
+                score = (frag * 0.04) + (rest_def * 0.4) - (rec_idx * 0.04)
+                raw_prob = 1.0 / (1.0 + math.exp(-(score - 2.5) / 1.5))
 
                 sma_window.append(raw_prob)
                 if len(sma_window) > 3: sma_window.pop(0)
