@@ -368,6 +368,30 @@ def get_suggestions(manager_id: str = None):
 
     return suggestions
 
+@app.get("/api/employees/{employee_id}/history")
+def get_employee_history_simple(employee_id: str):
+    """Get last 14 days of burnout/deep-work history for frontend charts."""
+    scores_df = load_csv("daily_scores.csv")
+    if scores_df.empty:
+        return []
+
+    emp_scores = scores_df[scores_df["employee_id"] == employee_id]
+    if emp_scores.empty:
+        return []
+
+    emp_scores = emp_scores.sort_values("date").tail(14)
+
+    history = []
+    for _, row in emp_scores.iterrows():
+        b_prob = row.get("burnout_probability", 0.0)
+        history.append({
+            "date": row["date"],
+            "burnoutIndex": round((b_prob if not pd.isna(b_prob) else 0.0) * 10, 1),
+            "deepWorkIndex": int(row.get("deep_work_index", 50) if not pd.isna(row.get("deep_work_index", 50)) else 50)
+        })
+
+    return history
+
 @app.get("/api/ensemble/summary")
 def get_ensemble_summary():
     """Get ensemble risk distribution summary."""

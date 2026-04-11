@@ -37,3 +37,15 @@ export async function fetchSuggestions(managerId?: string): Promise<Suggestion[]
         return [];
     }
 }
+
+export async function fetchEmployeeHistory(employeeId: string): Promise<any[]> {
+    try {
+        const url = `${API_BASE}/employees/${employeeId}/history`;
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch (e) {
+        console.error("Fetch Employee History Error:", e);
+        return [];
+    }
+}
