@@ -159,7 +159,7 @@ def run_pipeline(skip_ml=False):
 def start_api():
     """Start the FastAPI backend server."""
     _log("API", CYAN, f"Starting FastAPI on http://localhost:{API_PORT}")
-    cmd = f"{sys.executable} -m uvicorn api:app --reload --host 0.0.0.0 --port {API_PORT}"
+    cmd = f'"{sys.executable}" -m uvicorn api:app --reload --host 0.0.0.0 --port {API_PORT}'
     return _start_process(cmd, BACKEND_DIR, "API", CYAN)
 
 def start_frontend():
