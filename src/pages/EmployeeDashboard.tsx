@@ -52,10 +52,6 @@ function BurnoutDial({ value, max = 10 }: { value: number; max?: number }) {
         return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
     }
 
-    const needleTip = polarToXY(arcAngle, radius - 8);
-    const needleBase1 = polarToXY(arcAngle + 90, 8);
-    const needleBase2 = polarToXY(arcAngle - 90, 8);
-
     const dialColor = pct > 0.7 ? '#a83836' : pct > 0.4 ? '#d97706' : '#305ea9';
     const dialLabel = pct > 0.7 ? 'Critical' : pct > 0.4 ? 'Elevated' : 'Healthy';
 
@@ -106,23 +102,14 @@ function BurnoutDial({ value, max = 10 }: { value: number; max?: number }) {
                         strokeWidth={i === 0 || i === 5 || i === 10 ? 2 : 1}
                     />
                 ))}
-                {/* Needle */}
-                <polygon
-                    points={`${needleTip.x},${needleTip.y} ${needleBase1.x},${needleBase1.y} ${needleBase2.x},${needleBase2.y}`}
-                    fill={dialColor}
-                    opacity={0.85}
-                />
-                {/* Center circle */}
-                <circle cx={cx} cy={cy} r={8} fill="white" stroke={dialColor} strokeWidth={2} />
-                {/* Value text */}
-                <text x={cx} y={cy - 18} textAnchor="middle" fontSize={28} fontWeight={800} fontFamily="Manrope, sans-serif" fill={dialColor}>
+                {/* Value text cleanly stacked (no needle clutter) */}
+                <text x={cx} y={cy - 6} textAnchor="middle" fontSize={36} fontWeight={800} fontFamily="Manrope, sans-serif" fill={dialColor}>
                     {value.toFixed(1)}
                 </text>
-                <text x={cx} y={cy - 4} textAnchor="middle" fontSize={10} fill="#595f69" fontFamily="Inter, sans-serif">
+                <text x={cx} y={cy + 16} textAnchor="middle" fontSize={11} fill="#595f69" fontFamily="Inter, sans-serif" fontWeight="600">
                     / {max}
                 </text>
-                {/* Status label */}
-                <text x={cx} y={cy + 24} textAnchor="middle" fontSize={11} fontWeight={700} fontFamily="Inter, sans-serif" fill={dialColor} letterSpacing="0.08em">
+                <text x={cx} y={cy + 36} textAnchor="middle" fontSize={13} fontWeight={800} fontFamily="Inter, sans-serif" fill={dialColor} letterSpacing="0.05em">
                     {dialLabel.toUpperCase()}
                 </text>
             </svg>
@@ -239,9 +226,9 @@ function ForecastHorizon({ forecast }: { forecast: Forecast }) {
 // ─── Creative: Wellness Orbit — animated SVG rings ────────────────────────────
 function WellnessOrbit({ stats }: { stats: EmployeeStat }) {
     const metrics = [
-        { label: 'Deep Work', value: stats.deepWorkIndex / 100, color: '#305ea9', r: 44 },
-        { label: 'Connection', value: (stats.connectionIndex ?? 50) / 100, color: '#625983', r: 33 },
-        { label: 'Recovery', value: Math.max(0, 1 - (stats.recoveryDebt ?? 0) / 10), color: '#546071', r: 22 },
+        { label: 'Deep Work', value: stats.deepWorkIndex / 100, color: '#305ea9', r: 48 },
+        { label: 'Connection', value: (stats.connectionIndex ?? 50) / 100, color: '#625983', r: 37 },
+        { label: 'Recovery', value: Math.max(0, 1 - (stats.recoveryDebt ?? 0) / 10), color: '#546071', r: 26 },
     ];
 
     return (
@@ -273,11 +260,8 @@ function WellnessOrbit({ stats }: { stats: EmployeeStat }) {
                         );
                     })}
                     {/* Center */}
-                    <text x={60} y={56} textAnchor="middle" fontSize={12} fontWeight={800} fontFamily="Manrope" fill="#2d333b">
+                    <text x={60} y={66} textAnchor="middle" fontSize={24} fontWeight={800} fontFamily="Manrope" fill="#2d333b">
                         {stats.productivity}%
-                    </text>
-                    <text x={60} y={68} textAnchor="middle" fontSize={7.5} fontFamily="Inter" fill="#595f69" letterSpacing="0.06em">
-                        PRODUCTIVITY
                     </text>
                 </svg>
             </div>
@@ -348,14 +332,41 @@ function DailyScheduleStrip({ stats }: { stats: EmployeeStat }) {
     );
 }
 
+// ─── Nav Link Component ─────────────────────────────────────────────────────
+function NavLink({ icon, label, active, badge, onClick }: { icon: string; label: string; active?: boolean; badge?: number; onClick?: () => void }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                active
+                    ? 'bg-white/60 text-primary shadow-sm'
+                    : 'text-on-surface-variant hover:bg-white/30 hover:text-on-surface'
+            }`}
+        >
+            <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-[20px]">{icon}</span>
+                {label}
+            </div>
+            {badge != null && badge > 0 && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center ${
+                    active ? 'bg-primary text-white' : 'bg-tertiary/20 text-tertiary'
+                }`}>
+                    {badge}
+                </span>
+            )}
+        </button>
+    );
+}
+
 // ─── Main Employee Dashboard ──────────────────────────────────────────────────
-export default function EmployeeDashboard({ user }: { user: AppUser }) {
+export default function EmployeeDashboard({ user, onLogout }: { user: AppUser; onLogout?: () => void }) {
     const [empStats, setEmpStats] = useState<EmployeeStat | null>(null);
     const [history, setHistory] = useState<EmployeeHistory[]>([]);
     const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
     const [forecast, setForecast] = useState<Forecast | null>(null);
     const [narrative, setNarrative] = useState<Narrative | null>(null);
     const [loading, setLoading] = useState(true);
+    const [activeWindow, setActiveWindow] = useState('overview');
 
     useEffect(() => {
         async function loadData() {
@@ -409,8 +420,84 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
         { subject: 'Productivity', value: empStats.productivity ?? 70, fullMark: 100 },
     ];
 
+    const initials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
     return (
-        <div className="space-y-8 animate-fade-slide-up">
+        <div className="flex h-screen overflow-hidden font-body text-on-surface">
+
+            {/* ══════════════════ Sidebar ══════════════════ */}
+            <aside className="w-64 flex-shrink-0 glass-sidebar flex flex-col p-6 gap-2 z-50 overflow-y-auto">
+                <div className="mb-6 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-tinted">
+                        <span className="text-white font-extrabold text-base font-headline">P</span>
+                    </div>
+                    <div>
+                        <h2 className="text-base font-extrabold text-primary font-headline leading-tight">PulseIQ</h2>
+                        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Burnout Intelligence</p>
+                    </div>
+                </div>
+
+                <nav className="space-y-1 flex-1">
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2 px-1">Dashboard</p>
+                    <NavLink icon="monitoring" label="My Wellness" active={activeWindow === 'overview'} onClick={() => setActiveWindow('overview')} />
+                    <NavLink icon="whatshot" label="Buzz" active={activeWindow === 'buzz'} onClick={() => setActiveWindow('buzz')} />
+                </nav>
+
+                <div className="pt-4 border-t border-white/20 space-y-2">
+                    <div className="flex items-center gap-3 px-3 py-2">
+                        <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold shadow-tinted">
+                            {initials(user.name)}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-semibold text-on-surface truncate">{user.name}</p>
+                            <p className="text-[10px] text-on-surface-variant capitalize">{user.role}</p>
+                        </div>
+                    </div>
+                    <button
+                        id="logout-sidebar-btn"
+                        onClick={onLogout}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-on-surface-variant hover:text-on-surface text-sm font-medium rounded-xl hover:bg-white/20 transition-all"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">logout</span> Sign Out
+                    </button>
+                </div>
+            </aside>
+
+            {/* ══════════════════ Main Content ══════════════════ */}
+            <main className="flex-1 overflow-y-auto">
+                <div className="p-8 space-y-8 min-h-full">
+
+                    {/* Top Bar */}
+                    <header className="glass-topbar rounded-2xl flex justify-between items-center px-6 py-4 sticky top-0 z-40 mb-8">
+                        <h1 className="text-xl font-bold font-headline text-on-surface tracking-tight">
+                            Personal Overview
+                        </h1>
+                        <div className="flex items-center gap-5">
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-3 flex items-center text-on-surface-variant">
+                                    <span className="material-symbols-outlined text-[18px]">search</span>
+                                </span>
+                                <input
+                                    id="dashboard-search"
+                                    className="pl-9 pr-4 py-2 bg-white/50 border-none rounded-xl focus:ring-2 focus:ring-primary/30 w-56 text-sm outline-none placeholder-on-surface-variant"
+                                    placeholder="Search resources..."
+                                    type="text"
+                                />
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button id="notifications-btn" className="text-on-surface-variant hover:text-primary transition-colors">
+                                    <span className="material-symbols-outlined">notifications</span>
+                                </button>
+                                <button id="settings-btn" className="text-on-surface-variant hover:text-primary transition-colors">
+                                    <span className="material-symbols-outlined">settings</span>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Body */}
+                    {activeWindow === 'overview' && (
+                        <div className="space-y-8 animate-fade-slide-up">
 
             {/* ── Greeting Header ── */}
             <div className="glass-card p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start gap-4">
@@ -455,7 +542,7 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
                 <div className="glass-card p-6 rounded-2xl flex flex-col items-center gap-2">
                     <h3 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest self-start">Burnout Index</h3>
                     <BurnoutDial value={empStats.burnoutIndex} max={10} />
-                    <p className="text-xs text-on-surface-variant text-center max-w-[180px]">
+                    <p className="text-xs text-on-surface-variant text-center w-full px-2">
                         Predicted: <span className={`font-bold ${empStats.status === 'critical' ? 'text-error' : empStats.status === 'warning' ? 'text-amber-600' : 'text-primary'}`}>{empStats.predictedBurnout}</span>
                     </p>
                 </div>
@@ -623,6 +710,57 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
                     <AnomalyTimeline anomalies={anomalies} />
                 </div>
             )}
+                        </div>
+                    )}
+
+                    {activeWindow === 'buzz' && (
+                        <div className="space-y-8 animate-fade-slide-up">
+                            <div className="glass-card p-8 rounded-2xl">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <span className="material-symbols-outlined text-primary text-[28px]">campaign</span>
+                                    <h2 className="text-2xl font-extrabold font-headline text-on-surface">The Buzz</h2>
+                                </div>
+                                <p className="text-on-surface-variant mb-6 font-medium">While you were offline, here's what happened around the team:</p>
+                                
+                                <div className="space-y-4">
+                                    <div className="flex items-start gap-4 p-4 bg-white/40 border border-white/20 rounded-xl">
+                                        <div className="w-10 h-10 rounded-full bg-tertiary/10 flex items-center justify-center shrink-0">
+                                            <span className="material-symbols-outlined text-tertiary text-[20px]">celebration</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-on-surface">Project Phoenix Launch</p>
+                                            <p className="text-sm text-on-surface-variant mt-0.5">The design team successfully pushed the new mockups to staging late last night.</p>
+                                            <p className="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold mt-2">2 hours ago</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-4 p-4 bg-white/40 border border-white/20 rounded-xl">
+                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                            <span className="material-symbols-outlined text-primary text-[20px]">update</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-on-surface">Sprint Planning Rescheduled</p>
+                                            <p className="text-sm text-on-surface-variant mt-0.5">Alex moved the planning meeting to Thursday at 10 AM to accommodate timezone differences.</p>
+                                            <p className="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold mt-2">5 hours ago</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start gap-4 p-4 bg-white/40 border border-white/20 rounded-xl">
+                                        <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                                            <span className="material-symbols-outlined text-amber-600 text-[20px]">forum</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-on-surface">New Discussion Thread</p>
+                                            <p className="text-sm text-on-surface-variant mt-0.5">A debate started in the #engineering channel regarding the new API gateway timeout limits.</p>
+                                            <p className="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold mt-2">Yesterday</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </main>
         </div>
     );
 }

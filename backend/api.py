@@ -40,8 +40,8 @@ def load_csv(filename: str) -> pd.DataFrame:
 
 # Managers map
 MOCK_USERS = {
-    'm1': { "id": 'm1', "role": 'manager', "name": 'Manager 1 (M1)', "password": 'password' },
-    'm2': { "id": 'm2', "role": 'manager', "name": 'Manager 2 (M2)', "password": 'password' },
+    'm1': { "id": 'm1', "role": 'manager', "name": 'Manager A (M1)', "password": 'password' },
+    'm2': { "id": 'm2', "role": 'manager', "name": 'Manager B (M2)', "password": 'password' },
 }
 
 def get_employees_data():
@@ -73,8 +73,12 @@ def get_employees_data():
     employees = []
 
     for _, row in merged.iterrows():
-        # Assign manager based on team
-        manager_id = 'm1' if row.get("team") == "Engineering" else 'm2'
+        # Assign manager for a balanced split (Half to M1, Half to M2)
+        try:
+            emp_num = int(row["employee_id"].replace("E", ""))
+            manager_id = 'm1' if emp_num <= 15 else 'm2'
+        except:
+            manager_id = 'm1' if row.get("team") == "Engineering" else 'm2'
 
         # Calculate simulated productivity based on deep work and capacity
         cap = row.get("capacity_hours", 30)

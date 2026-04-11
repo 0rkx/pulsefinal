@@ -18,15 +18,17 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: AppUser) => v
         if (user) {
             onLogin(user);
         } else {
-            setError('No user found. Try: m1, m2, or E001');
+            setError('No user found. Try: m1, m2, e001, e002, etc.');
         }
     };
 
     const quickLogins = [
-        { id: 'm1', label: 'Manager 1', sub: 'Engineering', icon: 'manage_accounts', accent: 'text-primary border-primary/20 hover:border-primary/40 hover:bg-primary/5' },
-        { id: 'm2', label: 'Manager 2', sub: 'Design', icon: 'manage_accounts', accent: 'text-tertiary border-tertiary/20 hover:border-tertiary/40 hover:bg-tertiary/5' },
-        { id: 'e001', label: 'Employee', sub: 'At Risk', icon: 'person', accent: 'text-error border-error/20 hover:border-error/40 hover:bg-red-50' },
-        { id: 'e005', label: 'Employee', sub: 'Stable', icon: 'person', accent: 'text-secondary border-secondary/20 hover:border-secondary/40 hover:bg-surface-container' },
+        { id: 'm1', label: 'Manager A', sub: 'Team Alpha', icon: 'manage_accounts', accent: 'text-primary border-primary/20 hover:border-primary/40 hover:bg-primary/5' },
+        { id: 'm2', label: 'Manager B', sub: 'Team Beta', icon: 'manage_accounts', accent: 'text-tertiary border-tertiary/20 hover:border-tertiary/40 hover:bg-tertiary/5' },
+        { id: 'e001', label: 'E001 (Priya)', sub: 'Critical', icon: 'error', accent: 'text-error border-error/20 hover:border-error/40 hover:bg-red-50' },
+        { id: 'e002', label: 'E002 (Ishaan)', sub: 'Warning', icon: 'warning', accent: 'text-orange-500 border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-50' },
+        { id: 'e005', label: 'E005 (Emma)', sub: 'Healthy', icon: 'check_circle', accent: 'text-secondary border-secondary/20 hover:border-secondary/40 hover:bg-surface-container' },
+        { id: 'e006', label: 'E006 (Liam)', sub: 'Healthy', icon: 'check_circle', accent: 'text-green-600 border-green-600/20 hover:border-green-600/40 hover:bg-green-50' },
     ];
 
     return (
@@ -123,7 +125,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: AppUser) => v
                                     value={username}
                                     onChange={e => { setUsername(e.target.value); setError(''); }}
                                     className={`w-full bg-surface-container-low/60 border rounded-xl px-4 py-3 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all text-sm ${error ? 'border-error/40 focus:border-error' : 'border-outline-variant/20 focus:border-primary/40'}`}
-                                    placeholder="m1, m2, or E001"
+                                    placeholder="m1, m2, e001, e002..."
                                     disabled={isLoading}
                                     autoComplete="username"
                                 />
