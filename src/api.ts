@@ -96,3 +96,19 @@ export async function fetchEnsembleSummary(): Promise<EnsembleSummary | null> {
         return null;
     }
 }
+
+export async function askPulse(query: string, managerId?: string): Promise<string> {
+    try {
+        const res = await fetch(`${API_BASE}/llm/ask_pulse`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, manager_id: managerId })
+        });
+        if (!res.ok) return "Sorry, I am offline right now.";
+        const data = await res.json();
+        return data.response || data.error || "No response generated.";
+    } catch (e) {
+        console.error("Ask Pulse Error:", e);
+        return "An error occurred connecting to the intelligence server.";
+    }
+}

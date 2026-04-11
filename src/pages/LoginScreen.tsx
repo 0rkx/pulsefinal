@@ -48,7 +48,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: AppUser) => v
                     </div>
                     <div>
                         <h1 className="text-2xl font-extrabold font-headline text-primary leading-tight">PulseIQ</h1>
-                        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Burnout Intelligence</p>
+                        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Productivity Intelligence</p>
                     </div>
                 </div>
 
@@ -190,7 +190,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: AppUser) => v
                     </div>
 
                     <p className="text-center text-on-surface-variant text-xs mt-6 font-medium">
-                        © 2026 PulseIQ · Burnout Intelligence Platform
+                        © 2026 PulseIQ · Productivity Intelligence Platform
                     </p>
                 </div>
             </div>

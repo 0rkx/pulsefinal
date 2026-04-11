@@ -1,10 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Minus, Check, X, Shield, Cpu, Sparkles, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Check, X, Shield, Cpu, Sparkles, ArrowRight, Send, Bot, User } from 'lucide-react';
 import { AppUser, EmployeeStat, Suggestion, EmployeeHistory, Anomaly, Forecast, Narrative, EnsembleSummary } from '../types';
-import { fetchEmployees, fetchSuggestions, fetchEmployeeHistory, fetchAnomalies, fetchForecast, fetchNarratives, fetchEnsembleSummary } from '../api';
+import { fetchEmployees, fetchSuggestions, fetchEmployeeHistory, fetchAnomalies, fetchForecast, fetchNarratives, fetchEnsembleSummary, askPulse } from '../api';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+function formatMarkdown(text: string) {
+    const html = text
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") // sanitize HTML tags
+        .replace(/^### (.*$)/gm, '<h3 class="text-md font-bold mt-3 mb-1">$1</h3>')
+        .replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-4 mb-2">$1</h2>')
+        .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-5 mb-2">$1</h1>')
+        .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc my-0.5">$1</li>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br />');
+    
+    return <div className="space-y-1" dangerouslySetInnerHTML={{ __html: html }} />;
+}
 
 function TrendIcon({ direction }: { direction: string }) {
     if (direction === 'rising') return <TrendingUp className="w-4 h-4 text-error" />;
@@ -120,7 +134,7 @@ function NavLink({ icon, label, active, badge, onClick }: { icon: string; label:
 }
 
 // ─── Window type definitions ────────────────────────────────────────────────
-type ActiveWindow = 'overview' | 'employee' | 'optimizer' | 'team';
+type ActiveWindow = 'overview' | 'employee' | 'optimizer' | 'team' | 'askpulse';
 
 // ─── Main Manager Dashboard ─────────────────────────────────────────────────
 interface ManagerDashboardProps {
@@ -144,6 +158,11 @@ export default function ManagerDashboard({ user, onLogout }: ManagerDashboardPro
     const [loading, setLoading] = useState(true);
     const [activeWindow, setActiveWindow] = useState<ActiveWindow>('overview');
     const [alertsDismissed, setAlertsDismissed] = useState(false);
+    
+    // Ask Pulse State
+    const [chatMessages, setChatMessages] = useState<{role: 'user'|'ai', text: string}[]>([]);
+    const [chatInput, setChatInput] = useState('');
+    const [isChatLoading, setIsChatLoading] = useState(false);
 
     useEffect(() => {
         async function loadData() {
@@ -224,6 +243,7 @@ export default function ManagerDashboard({ user, onLogout }: ManagerDashboardPro
         employee: 'Employee Detail',
         optimizer: 'AI Task Optimizer',
         team: 'Team Management',
+        askpulse: 'Ask Pulse Copilot',
     };
 
     return (
@@ -238,7 +258,7 @@ export default function ManagerDashboard({ user, onLogout }: ManagerDashboardPro
                     </div>
                     <div>
                         <h2 className="text-base font-extrabold text-primary font-headline leading-tight">PulseIQ</h2>
-                        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Burnout Intelligence</p>
+                        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Productivity Intelligence</p>
                     </div>
                 </div>
 
@@ -249,6 +269,7 @@ export default function ManagerDashboard({ user, onLogout }: ManagerDashboardPro
                     <NavLink icon="person_search" label="Employee Detail" active={activeWindow === 'employee'} onClick={() => setActiveWindow('employee')} />
                     <NavLink icon="auto_awesome" label="Task Optimizer" active={activeWindow === 'optimizer'} badge={pendingSuggestions.length} onClick={() => setActiveWindow('optimizer')} />
                     <NavLink icon="groups" label="Team" active={activeWindow === 'team'} onClick={() => setActiveWindow('team')} />
+                    <NavLink icon="forum" label="Ask Pulse" active={activeWindow === 'askpulse'} onClick={() => setActiveWindow('askpulse')} />
                 </nav>
 
                 {/* Bottom */}
@@ -997,6 +1018,99 @@ export default function ManagerDashboard({ user, onLogout }: ManagerDashboardPro
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ═══════════════════════════════════════════════════
+                        WINDOW: ASK PULSE
+                       ═══════════════════════════════════════════════════ */}
+                    {activeWindow === 'askpulse' && (
+                        <div className="glass-panel rounded-2xl flex flex-col h-[calc(100vh-160px)] animate-fade-slide-up overflow-hidden">
+                            <div className="p-6 border-b border-outline-variant/30 bg-surface/50">
+                                <h3 className="text-lg font-bold font-headline flex items-center gap-2 text-on-surface">
+                                    <Sparkles className="w-5 h-5 text-tertiary" />
+                                    Ask Pulse Copilot
+                                </h3>
+                                <p className="text-sm text-on-surface-variant mt-1 mb-0 font-medium">
+                                    I analyze all real-time team metrics, suggestions, and histories to answer your questions.
+                                </p>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-surface-container-lowest/30">
+                                {chatMessages.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-70">
+                                        <Bot className="w-16 h-16 mb-4 text-outline/50 text-tertiary/20" />
+                                        <p className="font-medium text-sm">What would you like to know about your team's current state?</p>
+                                    </div>
+                                )}
+                                {chatMessages.map((msg, idx) => (
+                                    <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        {msg.role === 'ai' && (
+                                            <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white shrink-0 shadow-sm mt-1">
+                                                <Sparkles className="w-4 h-4" />
+                                            </div>
+                                        )}
+                                        <div className={`p-4 rounded-2xl max-w-[80%] text-sm leading-relaxed ${
+                                            msg.role === 'user' 
+                                                ? 'bg-primary text-white ml-12 rounded-tr-sm shadow-md' 
+                                                : 'bg-white shadow-sm border border-outline/20 mr-12 rounded-tl-sm text-on-surface font-medium'
+                                        }`}>
+                                            {formatMarkdown(msg.text)}
+                                        </div>
+                                        {msg.role === 'user' && (
+                                            <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface shrink-0 border border-outline/30 mt-1">
+                                                <User className="w-4 h-4" />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                {isChatLoading && (
+                                    <div className="flex gap-4 items-start">
+                                        <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white shrink-0 shadow-sm animate-pulse mt-1">
+                                            <Sparkles className="w-4 h-4" />
+                                        </div>
+                                        <div className="bg-white p-4 rounded-2xl rounded-tl-sm shadow-sm border border-outline/20 w-16 flex gap-1 justify-center items-center h-[52px]">
+                                            <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                            <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                            <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-4 bg-surface/50 border-t border-outline-variant/30">
+                                <form 
+                                    className="relative flex items-center" 
+                                    onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        if (!chatInput.trim() || isChatLoading) return;
+                                        
+                                        const query = chatInput.trim();
+                                        setChatInput('');
+                                        setChatMessages(prev => [...prev, { role: 'user', text: query }]);
+                                        setIsChatLoading(true);
+                                        
+                                        const aiResponse = await askPulse(query, user.id);
+                                        setChatMessages(prev => [...prev, { role: 'ai', text: aiResponse }]);
+                                        setIsChatLoading(false);
+                                    }}
+                                >
+                                    <input 
+                                        type="text" 
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        placeholder="Ask about burnout risks, optimal task allocations, or anomalies..."
+                                        className="w-full bg-white border border-outline/30 rounded-xl py-4 pl-5 pr-14 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-sm shadow-sm transition-all text-on-surface font-medium"
+                                    />
+                                    <button 
+                                        type="submit" 
+                                        disabled={!chatInput.trim() || isChatLoading}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl text-white bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:bg-surface-container disabled:text-on-surface-variant transition-all hover:shadow-md"
+                                    >
+                                        <Send className="w-4 h-4" />
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     )}

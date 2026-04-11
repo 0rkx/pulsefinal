@@ -14,7 +14,14 @@ import os
 import pandas as pd
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict, Any
+from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
+
+from google import genai
+from google.genai import types
+
+# DO NOT COMMIT SECRETS IN PRODUCTION - configuring based on user provided key
+client = genai.Client(api_key="AIzaSyAe0U-jW6FRYkp7M99OcLDX0v1F1lWKFEc")
 
 app = FastAPI(
     title="PulseIQ API",
@@ -511,3 +518,101 @@ def health_check():
         "version": "5.0",
         "dataFiles": status,
     }
+
+# ============================================================================
+# LLM / Gemini Flash Complementary Enhancements
+# ============================================================================
+
+class MessageDraftRequest(BaseModel):
+    task: str
+    from_name: str
+    to_name: str
+    reason: str
+    benefits: List[str]
+
+@app.post("/api/llm/draft_message")
+def llm_draft_message(req: MessageDraftRequest):
+    """
+    Complementary Feature: Uses Gemini Flash to draft an empathetic Slack/Email message
+    from a manager to an employee based on PulseIQ recommendation output.
+    """
+    try:
+        prompt = (
+            f"You are an empathetic and professional management assistant.\n"
+            f"Draft a polite, supportive, and non-confrontational direct message (Slack style) "
+            f"from '{req.from_name}' to '{req.to_name}'.\n"
+            f"The goal of the message is to suggest the following intervention: '{req.task}'.\n"
+            f"The reason for this intervention is: {req.reason}\n"
+            f"The expected benefits are: {', '.join(req.benefits)}\n\n"
+            f"The tone must be extremely supportive, avoiding any blame, and purely focused on their well-being and long-term productivity.\n"
+            f"Return only the drafted message text."
+        )
+        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+        return {"draft": response.text.strip()}
+    except Exception as e:
+        return {"error": str(e), "draft": f"Google API Error: {str(e)}"}
+
+@app.get("/api/llm/narrative/{employee_id}")
+def llm_generate_narrative(employee_id: str):
+    """
+    Complementary Feature: Dynamically generates an insightful, empathetic narrative 
+    summarizing an employee's current state utilizing their latest metrics.
+    """
+    emps = get_employees_data()
+    emp = None
+    for e in emps:
+        if e["id"] == employee_id:
+            emp = e
+            break
+            
+    if not emp:
+        return {"error": "Employee not found."}
+
+    try:
+        prompt = (
+            f"You are an empathetic organizational psychologist analyzing an employee's well-being metrics.\n"
+            f"Write a concise, 2-3 sentence narrative summarizing the current state of '{emp['name']}' ({emp['role']}).\n"
+            f"Here are their current stats:\n"
+            f"- Burnout Probability: {emp['burnout']}%\n"
+            f"- Health Status: {emp['status']}\n"
+            f"- Deep Work Analytics: {emp['deepWorkIndex']}/100\n"
+            f"- Fragmentation (Context Switching): {emp['fragmentationScore']}/100\n"
+            f"- Recovery Debt: {emp['recoveryDebt']}/100\n"
+            f"Provide insightful synthesis. Do not just list numbers. Identify one core challenge and wrap with a supportive tone."
+        )
+        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+        return {"employeeId": employee_id, "narrative": response.text.strip()}
+    except Exception as e:
+        return {"error": str(e), "narrative": f"Google API Error: {str(e)}"}
+
+class AskPulseRequest(BaseModel):
+    query: str
+    manager_id: Optional[str] = None
+
+@app.post("/api/llm/ask_pulse")
+def llm_ask_pulse(req: AskPulseRequest):
+    """
+    Complementary Feature: 'Ask Pulse' natural language query endpoint.
+    It gathers real-time data contexts and prompts Gemini to answer the user's question,
+    simulating a RAG architecture over the internal API.
+    """
+    try:
+        # Gather contextual data (simulating RAG context retrieval)
+        emps = get_employees(req.manager_id)
+        suggestions = get_suggestions(req.manager_id)
+        
+        context_str = f"Employees Context Data:\n{str(emps)}\n\nPending Workload Interventions:\n{str(suggestions)}"
+        
+        prompt = (
+            f"You are 'Ask Pulse', the AI Copilot for the PulseIQ employee burnout and management dashboard.\n"
+            f"You have access to the real-time internal API data for this manager. Analyze the provided context "
+            f"and answer their query in a helpful, concise, and professional tone. Format the response with markdown if suitable.\n\n"
+            f"--- INTERNAL DATA CONTEXT ---\n{context_str}\n\n"
+            f"--- MANAGER'S QUERY ---\n{req.query}\n"
+        )
+        
+        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+        return {"response": response.text.strip()}
+    except Exception as e:
+        return {"error": str(e), "response": f"Google API Error: {str(e)}"}
+

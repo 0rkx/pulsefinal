@@ -433,7 +433,7 @@ export default function EmployeeDashboard({ user, onLogout }: { user: AppUser; o
                     </div>
                     <div>
                         <h2 className="text-base font-extrabold text-primary font-headline leading-tight">PulseIQ</h2>
-                        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Burnout Intelligence</p>
+                        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Productivity Intelligence</p>
                     </div>
                 </div>
 

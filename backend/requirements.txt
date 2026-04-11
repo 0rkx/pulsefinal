@@ -28,3 +28,6 @@ statsmodels           # ARIMA, seasonal decomposition, statistical tests
 
 # --- Visualization (optional, for reports) ---
 matplotlib
+
+# --- LLM Integration ---
+google-genai
