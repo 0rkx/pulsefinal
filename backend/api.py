@@ -370,7 +370,7 @@ def get_suggestions(manager_id: str = None):
 
 @app.get("/api/employees/{employee_id}/history")
 def get_employee_history_simple(employee_id: str):
-    """Get last 14 days of burnout/deep-work history for frontend charts."""
+    """Get last 14 days of burnout/deep-work/sub-score history for frontend charts."""
     scores_df = load_csv("daily_scores.csv")
     if scores_df.empty:
         return []
@@ -384,10 +384,32 @@ def get_employee_history_simple(employee_id: str):
     history = []
     for _, row in emp_scores.iterrows():
         b_prob = row.get("burnout_probability", 0.0)
+        if pd.isna(b_prob):
+            b_prob = 0.0
+
+        deep = row.get("deep_work_index", 50)
+        if pd.isna(deep):
+            deep = 50
+
+        frag = row.get("fragmentation_score", 0)
+        if pd.isna(frag):
+            frag = 0
+
+        conn = row.get("connection_index", 50)
+        if pd.isna(conn):
+            conn = 50
+
+        rec = row.get("recovery_debt", 0)
+        if pd.isna(rec):
+            rec = 0
+
         history.append({
             "date": row["date"],
-            "burnoutIndex": round((b_prob if not pd.isna(b_prob) else 0.0) * 10, 1),
-            "deepWorkIndex": int(row.get("deep_work_index", 50) if not pd.isna(row.get("deep_work_index", 50)) else 50)
+            "burnoutIndex": round(b_prob * 10, 1),
+            "deepWorkIndex": int(deep),
+            "fragmentationScore": round(float(frag), 1),
+            "connectionIndex": round(float(conn), 1),
+            "recoveryDebt": round(float(rec), 1),
         })
 
     return history
