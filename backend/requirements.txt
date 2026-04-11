@@ -24,7 +24,7 @@ shap                  # SHAP feature importance explanations
 statsmodels           # ARIMA, seasonal decomposition, statistical tests
 
 # --- Deep Learning ---
-tensorflow            # LSTM bidirectional model for sequential prediction
+# tensorflow            # LSTM bidirectional model for sequential prediction
 
 # --- Visualization (optional, for reports) ---
 matplotlib

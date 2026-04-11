@@ -136,10 +136,13 @@ def run_pipeline(skip_ml=False):
     if skip_ml:
         cmd.append("--skip-ml")
 
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+
     proc = subprocess.run(
         cmd,
         cwd=BACKEND_DIR,
-        text=True,
+        env=env,
     )
 
     if proc.returncode != 0:
@@ -247,6 +250,9 @@ def check_dependencies():
 # Main
 # ---------------------------------------------------------------------------
 def main():
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+        
     parser = argparse.ArgumentParser(
         description="PulseIQ — Run everything at once"
     )

@@ -77,9 +77,9 @@ def healthy_profile(day_idx, dt, emp, ctx):
         return dict(msg_count_work=0, msg_count_social=0, msg_count_dms=0, after_hours=False,
                     tickets_touched=0, meetings_count=0, git_commits=0, zoom_meetings=0, sentiment=0.7)
     return dict(
-        msg_count_work=random.randint(5, 10), msg_count_social=random.randint(1, 3), msg_count_dms=random.randint(2, 5),
-        after_hours=False, tickets_touched=random.randint(1, 3), meetings_count=random.randint(2, 4),
-        git_commits=random.randint(2, 5), zoom_meetings=random.randint(1, 3), zoom_speaking_ratio=0.25, sentiment=0.75
+        msg_count_work=random.randint(1, 3), msg_count_social=random.randint(0, 2), msg_count_dms=random.randint(0, 2),
+        after_hours=False, tickets_touched=random.randint(0, 1), meetings_count=random.randint(0, 1),
+        git_commits=random.randint(0, 2), zoom_meetings=random.randint(0, 1), zoom_speaking_ratio=0.25, sentiment=0.85
     )
 
 def priya_profile(day_idx, dt, emp, ctx):
@@ -128,8 +128,18 @@ def main():
     ]
     for i, (name, team, persona) in enumerate(planted):
         employees.append({"employee_id": f"E{i+1:03d}", "name": name, "team": team, "persona": persona})
+        
+    NAMES = [
+        "Emma Stone", "Liam Neeson", "Olivia Wilde", "Noah Centineo", "Ava DuVernay",
+        "William Shatner", "Sophia Loren", "James Franco", "Isabella Rossellini",
+        "Logan Paul", "Mia Farrow", "Benjamin Bratt", "Charlotte Bronte",
+        "Lucas Hedges", "Amelia Earhart", "Mason Mount", "Harper Lee", "Elijah Wood",
+        "Evelyn Waugh", "Oliver Twist", "Abigail Breslin", "Jacob Elordi",
+        "Emily Blunt", "Michael Cera", "Elizabeth Taylor", "Alexander the Great"
+    ]
     for i in range(len(employees) + 1, 31):
-        employees.append({"employee_id": f"E{i:03d}", "name": f"Employee {i}", "team": "Engineering", "persona": "healthy"})
+        name = NAMES[i - 5] if i - 5 < len(NAMES) else f"Employee {i}"
+        employees.append({"employee_id": f"E{i:03d}", "name": name, "team": "Engineering", "persona": "healthy"})
 
     # Write employees.csv
     emp_f = open(OUTPUT_DIR / "employees.csv", "w", newline="")

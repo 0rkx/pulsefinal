@@ -109,6 +109,7 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
     const [narrative, setNarrative] = useState<Narrative | null>(null);
     const [ensembleSummary, setEnsembleSummary] = useState<EnsembleSummary | null>(null);
     const [allNarratives, setAllNarratives] = useState<Narrative[]>([]);
+    const [sortOrder, setSortOrder] = useState<'busy' | 'free'>('busy');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -172,6 +173,14 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
     const selectedEmp = teamEmployees.find(e => e.id === selectedEmpId);
     const criticalEmps = teamEmployees.filter(e => e.status === 'critical');
     const warningEmps = teamEmployees.filter(e => e.status === 'warning');
+
+    const sortedEmployees = [...teamEmployees].sort((a, b) => {
+        if (sortOrder === 'busy') {
+            return b.burnout - a.burnout || ((b.fragmentationScore ?? 0) - (a.fragmentationScore ?? 0));
+        } else {
+            return a.burnout - b.burnout || ((a.fragmentationScore ?? 0) - (b.fragmentationScore ?? 0));
+        }
+    });
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -239,11 +248,21 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Team Sidebar */}
                 <div className="col-span-1 space-y-4">
-                    <h2 className="text-lg font-semibold flex items-center gap-2">
-                        <User className="w-5 h-5 text-zinc-400" /> Team Overview
-                    </h2>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold flex items-center gap-2">
+                            <User className="w-5 h-5 text-zinc-400" /> Team Overview
+                        </h2>
+                        <select 
+                            value={sortOrder} 
+                            onChange={(e) => setSortOrder(e.target.value as 'busy' | 'free')}
+                            className="bg-zinc-800 text-xs text-zinc-300 border border-zinc-700 rounded-md py-1 px-2 outline-none focus:border-zinc-500"
+                        >
+                            <option value="busy">Most Busy</option>
+                            <option value="free">Most Free</option>
+                        </select>
+                    </div>
                     <div className="flex flex-col gap-3">
-                        {teamEmployees.map((emp) => (
+                        {sortedEmployees.map((emp) => (
                             <button
                                 key={emp.id}
                                 onClick={() => setSelectedEmpId(emp.id)}

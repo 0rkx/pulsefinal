@@ -313,6 +313,7 @@ def get_suggestions(manager_id: str = None):
             task_name = "Workload Reallocation"
             # Find a healthy employee under the same manager
             healthy_peers = [e for e in emps if e["managerId"] == emp["managerId"] and e["status"] == "healthy" and e["id"] != eid]
+            healthy_peers.sort(key=lambda e: (e.get("burnoutIndex", 10), e.get("fragmentationScore", 50)))
             to_name = healthy_peers[0]["name"] if healthy_peers else "Available Peer"
 
             suggestions.append({
