@@ -29,3 +29,9 @@ export interface Suggestion {
     status: 'pending' | 'accepted' | 'rejected' | string;
     managerId: string;
 }
+
+export interface EmployeeHistory {
+    date: string;
+    burnoutIndex: number;
+    deepWorkIndex: number;
+}

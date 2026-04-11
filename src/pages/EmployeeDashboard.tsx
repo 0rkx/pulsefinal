@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Brain, Flame, Timer, Target, Briefcase, Clock, Activity, Coffee, Check, User, Zap } from 'lucide-react';
-import { AppUser, EmployeeStat } from '../types';
-import { fetchEmployees } from '../api';
+import { Brain, Flame, Timer, Target, Briefcase, Clock, Activity, Coffee, Check, User, Zap, LineChart as LineChartIcon } from 'lucide-react';
+import { AppUser, EmployeeStat, EmployeeHistory } from '../types';
+import { fetchEmployees, fetchEmployeeHistory } from '../api';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function EmployeeDashboard({ user }: { user: AppUser }) {
     const [empStats, setEmpStats] = useState<EmployeeStat | null>(null);
+    const [history, setHistory] = useState<EmployeeHistory[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -24,6 +26,18 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
                 deepWorkIndex: 80
             };
             setEmpStats(me);
+            const hist = await fetchEmployeeHistory(me.id);
+            if (hist && hist.length > 0) {
+                setHistory(hist);
+            } else {
+                setHistory([
+                    { date: 'Mon', burnoutIndex: 2.0, deepWorkIndex: 80 },
+                    { date: 'Tue', burnoutIndex: 2.5, deepWorkIndex: 75 },
+                    { date: 'Wed', burnoutIndex: 3.5, deepWorkIndex: 60 },
+                    { date: 'Thu', burnoutIndex: 3.2, deepWorkIndex: 70 },
+                    { date: 'Fri', burnoutIndex: 4.1, deepWorkIndex: 50 },
+                ]);
+            }
             setLoading(false);
         }
         loadData();
@@ -65,6 +79,38 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
                         <span className="text-4xl font-bold text-blue-400">{empStats.deepWorkIndex}</span>
                         <span className="text-zinc-500 font-medium">/ 100</span>
                     </div>
+                </div>
+            </div>
+
+            {/* Performance History Chart */}
+            <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg mt-6 mb-6">
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-white">
+                    <LineChartIcon className="w-5 h-5 text-emerald-500" /> Performance & Wellness Trend
+                </h2>
+                <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={history} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                                </linearGradient>
+                                <linearGradient id="colorDeepWork" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                            <XAxis dataKey="date" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+                            <Tooltip 
+                                contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '0.5rem', color: '#f4f4f5' }}
+                                itemStyle={{ fontWeight: 500 }}
+                            />
+                            <Area type="monotone" dataKey="burnoutIndex" name="Burnout Risk" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnout)" />
+                            <Area type="monotone" dataKey="deepWorkIndex" name="Deep Work %" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorDeepWork)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
 

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, User, Flame, Timer, Target, ArrowRight, Zap, TrendingUp, Check, X, Brain } from 'lucide-react';
-import { AppUser, EmployeeStat, Suggestion } from '../types';
-import { fetchEmployees, fetchSuggestions } from '../api';
+import { AlertTriangle, User, Flame, Timer, Target, ArrowRight, Zap, TrendingUp, Check, X, Brain, LineChart as LineChartIcon } from 'lucide-react';
+import { AppUser, EmployeeStat, Suggestion, EmployeeHistory } from '../types';
+import { fetchEmployees, fetchSuggestions, fetchEmployeeHistory } from '../api';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function ManagerDashboard({ user }: { user: AppUser }) {
     const [alertsDismissed, setAlertsDismissed] = useState(false);
     const [teamEmployees, setTeamEmployees] = useState<EmployeeStat[]>([]);
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [selectedEmpId, setSelectedEmpId] = useState<string | null>(null);
+    const [history, setHistory] = useState<EmployeeHistory[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -24,6 +26,24 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
         }
         loadData();
     }, [user.id]);
+
+    useEffect(() => {
+        if (selectedEmpId) {
+            fetchEmployeeHistory(selectedEmpId).then(hist => {
+                if (hist && hist.length > 0) {
+                    setHistory(hist);
+                } else {
+                    setHistory([
+                        { date: 'Mon', burnoutIndex: 2.0, deepWorkIndex: 80 },
+                        { date: 'Tue', burnoutIndex: 2.5, deepWorkIndex: 75 },
+                        { date: 'Wed', burnoutIndex: 3.5, deepWorkIndex: 60 },
+                        { date: 'Thu', burnoutIndex: 3.2, deepWorkIndex: 70 },
+                        { date: 'Fri', burnoutIndex: 4.1, deepWorkIndex: 50 },
+                    ]);
+                }
+            });
+        }
+    }, [selectedEmpId]);
 
     const handleSuggestionAction = (id: number, action: string) => {
         setSuggestions(prev => prev.map(s => s.id === id ? { ...s, status: action } : s));
@@ -129,6 +149,37 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
                                 <div className="bg-zinc-950/50 p-4 rounded-xl border border-zinc-800">
                                     <div className="flex items-center gap-2 text-zinc-400 text-sm mb-2"><Target className="w-4 h-4" /> Deep Work Index</div>
                                     <div className="text-2xl font-medium text-emerald-400">{selectedEmp.deepWorkIndex} <span className="text-sm text-zinc-500">/ 100</span></div>
+                                </div>
+                            </div>
+
+                            <div className="mt-8 pt-6 border-t border-zinc-800/50">
+                                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-zinc-300">
+                                    <LineChartIcon className="w-4 h-4 text-emerald-500" /> 14-Day Performance Trend
+                                </h3>
+                                <div className="h-56 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={history} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                            <defs>
+                                                <linearGradient id="colorBurnoutMgr" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
+                                                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                                                </linearGradient>
+                                                <linearGradient id="colorDeepWorkMgr" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                                            <XAxis dataKey="date" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+                                            <Tooltip 
+                                                contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '0.5rem', color: '#f4f4f5' }}
+                                                itemStyle={{ fontWeight: 500 }}
+                                            />
+                                            <Area type="monotone" dataKey="burnoutIndex" name="Burnout Risk" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnoutMgr)" />
+                                            <Area type="monotone" dataKey="deepWorkIndex" name="Deep Work %" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorDeepWorkMgr)" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </div>
                         </div>
