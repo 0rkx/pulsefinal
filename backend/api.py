@@ -83,37 +83,54 @@ def get_employees_data():
         productivity = min(100, int((cap / 30.0) * 100))
 
         # Default predictions
-        forecast = row.get("forecast_days_until_critical", "Stable")
-        if pd.isna(forecast) or forecast == "":
+        forecast_raw = row.get("forecast_days_until_critical", "Stable")
+        forecast_numeric = None  # will hold the numeric value if available
+        if pd.isna(forecast_raw) or forecast_raw == "":
             forecast = "Stable"
-        elif isinstance(forecast, (int, float)):
-            if forecast < 0:
+        elif isinstance(forecast_raw, (int, float)):
+            forecast_numeric = float(forecast_raw)
+            if forecast_numeric < 0:
                 forecast = "Burnout Already Reached"
             else:
-                forecast = f"{int(forecast)} Days"
-        elif isinstance(forecast, str):
+                forecast = f"{int(forecast_numeric)} Hours"
+        elif isinstance(forecast_raw, str):
             try:
-                fval = float(forecast)
-                if fval < 0:
+                forecast_numeric = float(forecast_raw)
+                if forecast_numeric < 0:
                     forecast = "Burnout Already Reached"
                 else:
-                    forecast = f"{int(fval)} Days"
+                    forecast = f"{int(forecast_numeric)} Hours"
             except ValueError:
-                pass  # keep original string e.g. "Stable"
+                forecast = forecast_raw  # keep original string e.g. "Stable"
 
         b_prob = row.get("burnout_probability", 0.0)
         if pd.isna(b_prob):
             b_prob = 0.0
 
-        # Determine status from risk_level or ensemble tier
+        # Always read these so they're available for the employee dict later
         risk_level = row.get("risk_level", "")
         ensemble_tier = row.get("risk_tier", "")
-        if risk_level == "CRITICAL" or ensemble_tier in ("CRITICAL", "HIGH"):
-            status = 'critical'
-        elif risk_level == "WARNING" or ensemble_tier == "MEDIUM":
-            status = 'warning'
+
+        # Determine status from forecast_days_until_critical so that the
+        # risk tag is always consistent with the displayed time-to-burnout.
+        # Thresholds: <=30 hours -> critical, <=90 hours -> warning, else healthy.
+        # Fall back to risk_level / ensemble_tier only when no numeric forecast.
+        if forecast_numeric is not None:
+            if forecast_numeric < 0:
+                status = 'critical'
+            elif forecast_numeric <= 30:
+                status = 'critical'
+            elif forecast_numeric <= 90:
+                status = 'warning'
+            else:
+                status = 'healthy'
         else:
-            status = 'healthy'
+            if risk_level == "CRITICAL" or ensemble_tier in ("CRITICAL", "HIGH"):
+                status = 'critical'
+            elif risk_level == "WARNING" or ensemble_tier == "MEDIUM":
+                status = 'warning'
+            else:
+                status = 'healthy'
 
         deep_idx = row.get("deep_work_index", 50)
         if pd.isna(deep_idx):
