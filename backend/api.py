@@ -87,7 +87,19 @@ def get_employees_data():
         if pd.isna(forecast) or forecast == "":
             forecast = "Stable"
         elif isinstance(forecast, (int, float)):
-            forecast = f"{int(forecast)} Days"
+            if forecast < 0:
+                forecast = "Burnout Already Reached"
+            else:
+                forecast = f"{int(forecast)} Days"
+        elif isinstance(forecast, str):
+            try:
+                fval = float(forecast)
+                if fval < 0:
+                    forecast = "Burnout Already Reached"
+                else:
+                    forecast = f"{int(fval)} Days"
+            except ValueError:
+                pass  # keep original string e.g. "Stable"
 
         b_prob = row.get("burnout_probability", 0.0)
         if pd.isna(b_prob):

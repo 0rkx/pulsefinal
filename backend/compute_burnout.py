@@ -137,6 +137,9 @@ def main():
 
                 slope = linear_slope(all_probs_hist[-14:]) if len(all_probs_hist) >= 5 else 0
                 days_to_crit = (CRITICAL_THRESHOLD - smoothed_prob) / slope if slope > 0.001 else None
+                # Clamp: ensure time-to-burnout is always greater than -2
+                if days_to_crit is not None and days_to_crit < -1:
+                    days_to_crit = -1
             else:
                 smoothed_prob, days_to_crit = None, None
                 all_probs_hist.append(0.0)
