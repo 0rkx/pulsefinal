@@ -82,27 +82,6 @@ def get_employees_data():
             cap = 30
         productivity = min(100, int((cap / 30.0) * 100))
 
-        # Default predictions
-        forecast_raw = row.get("forecast_days_until_critical", "Stable")
-        forecast_numeric = None  # will hold the numeric value if available
-        if pd.isna(forecast_raw) or forecast_raw == "":
-            forecast = "Stable"
-        elif isinstance(forecast_raw, (int, float)):
-            forecast_numeric = float(forecast_raw)
-            if forecast_numeric < 0:
-                forecast = "Burnout Already Reached"
-            else:
-                forecast = f"{int(forecast_numeric)} Hours"
-        elif isinstance(forecast_raw, str):
-            try:
-                forecast_numeric = float(forecast_raw)
-                if forecast_numeric < 0:
-                    forecast = "Burnout Already Reached"
-                else:
-                    forecast = f"{int(forecast_numeric)} Hours"
-            except ValueError:
-                forecast = forecast_raw  # keep original string e.g. "Stable"
-
         b_prob = row.get("burnout_probability", 0.0)
         if pd.isna(b_prob):
             b_prob = 0.0
@@ -110,6 +89,21 @@ def get_employees_data():
         # Always read these so they're available for the employee dict later
         risk_level = row.get("risk_level", "")
         ensemble_tier = row.get("risk_tier", "")
+
+        # Default predictions
+        forecast_numeric = None
+        
+        # Tie Time-To-Burnout directly to Burnout Probability for consistency
+        # based on threshold alignment bounds.
+        # Critical threshold = 0.85
+        # High Risk >= 0.70 (<= 30 hours)
+        # Medium Risk >= 0.40 (<= 90 hours)
+        if b_prob >= 0.85:
+            forecast_numeric = 0.0
+            forecast = "Burnout Already Reached"
+        else:
+            forecast_numeric = max(0.0, (0.85 - b_prob) * 200.0)
+            forecast = f"{int(forecast_numeric)} Hours"
 
         # Determine status from forecast_days_until_critical so that the
         # risk tag is always consistent with the displayed time-to-burnout.
