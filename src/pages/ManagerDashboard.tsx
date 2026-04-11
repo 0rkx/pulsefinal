@@ -187,7 +187,7 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
                                 <p key={e.id} className="text-sm text-rose-300 mt-1">
                                     <span className="font-semibold">{e.name}</span> is at {e.burnout}% burnout risk
                                     {e.riskTier && <> (ensemble tier: <span className="font-semibold">{e.riskTier}</span>)</>}
-                                    {e.drivingFactors && <> — factors: {e.drivingFactors.split(';').slice(0, 2).join(', ')}</>}
+                                    {e.drivingFactors && <> — factors: {e.drivingFactors.split(/[;,]/).map(s => s.trim()).filter(Boolean).slice(0, 2).join(', ')}</>}
                                 </p>
                             ))}
                             {warningEmps.map(e => (
@@ -205,22 +205,26 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
             )}
 
             {/* Ensemble Summary Panel */}
-            {ensembleSummary && (
+            {ensembleSummary && Object.keys(ensembleSummary.distribution || {}).length > 0 && (
                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-lg">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold flex items-center gap-2">
                             <BarChart3 className="w-5 h-5 text-violet-400" /> Ensemble Intelligence Summary
                         </h2>
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5 text-sm text-zinc-400">
-                                <Shield className="w-4 h-4 text-violet-400" />
-                                <span>Avg Confidence: <span className="text-violet-400 font-bold">{(ensembleSummary.averageConfidence * 100).toFixed(1)}%</span></span>
-                            </div>
-                            <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded font-medium">{ensembleSummary.totalEmployees} employees</span>
+                            {ensembleSummary.averageConfidence != null && (
+                                <div className="flex items-center gap-1.5 text-sm text-zinc-400">
+                                    <Shield className="w-4 h-4 text-violet-400" />
+                                    <span>Avg Confidence: <span className="text-violet-400 font-bold">{(ensembleSummary.averageConfidence * 100).toFixed(1)}%</span></span>
+                                </div>
+                            )}
+                            {ensembleSummary.totalEmployees != null && (
+                                <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded font-medium">{ensembleSummary.totalEmployees} employees</span>
+                            )}
                         </div>
                     </div>
                     <DistributionBar distribution={ensembleSummary.distribution} />
-                    {ensembleSummary.modelsAvailable.length > 0 && (
+                    {(ensembleSummary.modelsAvailable || []).length > 0 && (
                         <div className="mt-3 flex items-center gap-2">
                             <Cpu className="w-3.5 h-3.5 text-zinc-500" />
                             <span className="text-xs text-zinc-500">Active models:</span>
@@ -267,7 +271,7 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
                                     </div>
                                     <div>
                                         <div className="text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Frag.</div>
-                                        <div className={`${emp.fragmentationScore > 6 ? 'text-rose-400' : emp.fragmentationScore > 3 ? 'text-amber-400' : 'text-emerald-400'} font-medium`}>{emp.fragmentationScore?.toFixed(1) ?? '—'}</div>
+                                        <div className={`${(emp.fragmentationScore ?? 0) > 70 ? 'text-rose-400' : (emp.fragmentationScore ?? 0) > 50 ? 'text-amber-400' : 'text-emerald-400'} font-medium`}>{emp.fragmentationScore?.toFixed(1) ?? '—'}</div>
                                     </div>
                                     <div>
                                         <div className="text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Prod.</div>
@@ -334,8 +338,8 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
                                 </div>
                                 <div className="bg-zinc-950/50 p-4 rounded-xl border border-zinc-800">
                                     <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider mb-2"><Waves className="w-3.5 h-3.5" /> Fragmentation</div>
-                                    <div className={`text-2xl font-medium ${selectedEmp.fragmentationScore > 6 ? 'text-rose-400' : selectedEmp.fragmentationScore > 3 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                        {selectedEmp.fragmentationScore?.toFixed(1) ?? '—'} <span className="text-sm text-zinc-500">/ 10</span>
+                                    <div className={`text-2xl font-medium ${(selectedEmp.fragmentationScore ?? 0) > 70 ? 'text-rose-400' : (selectedEmp.fragmentationScore ?? 0) > 50 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                        {selectedEmp.fragmentationScore?.toFixed(1) ?? '—'} <span className="text-sm text-zinc-500">/ 100</span>
                                     </div>
                                 </div>
                                 <div className="bg-zinc-950/50 p-4 rounded-xl border border-zinc-800">
@@ -344,17 +348,17 @@ export default function ManagerDashboard({ user }: { user: AppUser }) {
                                 </div>
                                 <div className="bg-zinc-950/50 p-4 rounded-xl border border-zinc-800">
                                     <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider mb-2"><BatteryCharging className="w-3.5 h-3.5" /> Recovery Debt</div>
-                                    <div className={`text-2xl font-medium ${selectedEmp.recoveryDebt > 5 ? 'text-rose-400' : selectedEmp.recoveryDebt > 2 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                    <div className={`text-2xl font-medium ${(selectedEmp.recoveryDebt ?? 0) > 5 ? 'text-rose-400' : (selectedEmp.recoveryDebt ?? 0) > 2 ? 'text-amber-400' : 'text-emerald-400'}`}>
                                         {selectedEmp.recoveryDebt?.toFixed(1) ?? '—'} <span className="text-sm text-zinc-500">hrs</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Driving Factors */}
-                            {selectedEmp.drivingFactors && selectedEmp.drivingFactors.length > 0 && (
+                            {selectedEmp.drivingFactors && selectedEmp.drivingFactors.trim().length > 0 && (
                                 <div className="mt-5 flex items-start gap-2 flex-wrap">
                                     <Sparkles className="w-4 h-4 text-amber-400 mt-1 shrink-0" />
-                                    {selectedEmp.drivingFactors.split(';').map(f => f.trim()).filter(Boolean).map((f, i) => (
+                                    {selectedEmp.drivingFactors.split(/[;,]/).map(f => f.trim()).filter(Boolean).map((f, i) => (
                                         <span key={i} className="text-xs bg-zinc-950 border border-zinc-800 text-zinc-300 px-2.5 py-1 rounded-full">
                                             {f}
                                         </span>

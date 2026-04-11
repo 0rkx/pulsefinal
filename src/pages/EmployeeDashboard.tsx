@@ -112,15 +112,15 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
 
     // Radar chart data for sub-scores
     const radarData = [
-        { subject: 'Deep Work', value: empStats.deepWorkIndex, fullMark: 100 },
+        { subject: 'Deep Work', value: empStats.deepWorkIndex ?? 50, fullMark: 100 },
         { subject: 'Connection', value: empStats.connectionIndex ?? 50, fullMark: 100 },
         { subject: 'Recovery', value: Math.max(0, 100 - (empStats.recoveryDebt ?? 0) * 10), fullMark: 100 },
-        { subject: 'Focus', value: Math.max(0, 100 - (empStats.fragmentationScore ?? 0) * 5), fullMark: 100 },
+        { subject: 'Focus', value: Math.max(0, 100 - (empStats.fragmentationScore ?? 50)), fullMark: 100 },
     ];
 
     // Parse driving factors into tags
     const factorTags = empStats.drivingFactors
-        ? empStats.drivingFactors.split(';').map(f => f.trim()).filter(Boolean)
+        ? empStats.drivingFactors.split(/[;,]/).map(f => f.trim()).filter(Boolean)
         : [];
 
     return (
@@ -189,8 +189,8 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-sm">
                     <div className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2"><Waves className="w-4 h-4" /> Fragmentation</div>
                     <div className="flex items-baseline gap-2">
-                        <span className={`text-4xl font-bold ${empStats.fragmentationScore > 6 ? 'text-rose-400' : empStats.fragmentationScore > 3 ? 'text-amber-400' : 'text-emerald-400'}`}>{empStats.fragmentationScore?.toFixed(1) ?? '—'}</span>
-                        <span className="text-zinc-500 font-medium">/ 10</span>
+                        <span className={`text-4xl font-bold ${(empStats.fragmentationScore ?? 0) > 70 ? 'text-rose-400' : (empStats.fragmentationScore ?? 0) > 50 ? 'text-amber-400' : 'text-emerald-400'}`}>{empStats.fragmentationScore?.toFixed(1) ?? '—'}</span>
+                        <span className="text-zinc-500 font-medium">/ 100</span>
                     </div>
                 </div>
             </div>
@@ -199,9 +199,9 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3">
                     <GaugeBar label="Deep Work" value={empStats.deepWorkIndex} max={100} icon={<Target className="w-3.5 h-3.5" />} color="text-blue-400" unit="/ 100" />
-                    <GaugeBar label="Fragmentation" value={empStats.fragmentationScore ?? 0} max={10} icon={<Waves className="w-3.5 h-3.5" />} color={empStats.fragmentationScore > 6 ? "text-rose-400" : empStats.fragmentationScore > 3 ? "text-amber-400" : "text-emerald-400"} unit="/ 10" />
+                    <GaugeBar label="Fragmentation" value={empStats.fragmentationScore ?? 0} max={100} icon={<Waves className="w-3.5 h-3.5" />} color={(empStats.fragmentationScore ?? 0) > 70 ? "text-rose-400" : (empStats.fragmentationScore ?? 0) > 50 ? "text-amber-400" : "text-emerald-400"} unit="/ 100" />
                     <GaugeBar label="Connection" value={empStats.connectionIndex ?? 50} max={100} icon={<Link2 className="w-3.5 h-3.5" />} color="text-cyan-400" unit="/ 100" />
-                    <GaugeBar label="Recovery Debt" value={empStats.recoveryDebt ?? 0} max={10} icon={<BatteryCharging className="w-3.5 h-3.5" />} color={empStats.recoveryDebt > 5 ? "text-rose-400" : empStats.recoveryDebt > 2 ? "text-amber-400" : "text-emerald-400"} unit="hrs" />
+                    <GaugeBar label="Recovery Debt" value={empStats.recoveryDebt ?? 0} max={10} icon={<BatteryCharging className="w-3.5 h-3.5" />} color={(empStats.recoveryDebt ?? 0) > 5 ? "text-rose-400" : (empStats.recoveryDebt ?? 0) > 2 ? "text-amber-400" : "text-emerald-400"} unit="hrs" />
                 </div>
                 <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl shadow-lg flex flex-col items-center">
                     <h3 className="text-sm font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Wellness Radar</h3>
