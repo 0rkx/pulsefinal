@@ -1,0 +1,907 @@
+%======================================================================
+%  PulseIQ — Technical Documentation
+%  Auto‑generated LaTeX source
+%======================================================================
+\documentclass[12pt, a4paper, oneside]{report}
+
+%----------------------------------------------------------------------
+% Packages
+%----------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{amsmath, amssymb}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{float}
+
+%----------------------------------------------------------------------
+% Colour palette
+%----------------------------------------------------------------------
+\definecolor{pulseblue}{HTML}{1A73E8}
+\definecolor{pulsedark}{HTML}{1B1F3B}
+\definecolor{pulsegray}{HTML}{5F6368}
+\definecolor{codebackground}{HTML}{F5F5F5}
+\definecolor{codekeyword}{HTML}{0D47A1}
+\definecolor{codestring}{HTML}{1B5E20}
+\definecolor{codecomment}{HTML}{9E9E9E}
+
+%----------------------------------------------------------------------
+% Hyperref configuration
+%----------------------------------------------------------------------
+\hypersetup{
+    colorlinks  = true,
+    linkcolor   = pulseblue,
+    urlcolor    = pulseblue,
+    citecolor   = pulseblue,
+    pdfauthor   = {PulseIQ Team},
+    pdftitle    = {PulseIQ Technical Documentation},
+    pdfsubject  = {Employee Burnout Detection Platform},
+}
+
+%----------------------------------------------------------------------
+% Listings style
+%----------------------------------------------------------------------
+\lstdefinestyle{pulseCode}{
+    backgroundcolor  = \color{codebackground},
+    basicstyle       = \ttfamily\small,
+    keywordstyle     = \color{codekeyword}\bfseries,
+    stringstyle      = \color{codestring},
+    commentstyle     = \color{codecomment}\itshape,
+    breaklines       = true,
+    frame            = single,
+    rulecolor        = \color{pulsegray!40},
+    numbers          = left,
+    numberstyle      = \tiny\color{pulsegray},
+    numbersep        = 8pt,
+    xleftmargin      = 1.5em,
+    framexleftmargin = 1.5em,
+    tabsize          = 4,
+    showstringspaces = false,
+    captionpos       = b,
+}
+\lstset{style=pulseCode}
+
+%----------------------------------------------------------------------
+% Header / Footer
+%----------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{pulsegray}{\leftmark}}
+\fancyhead[R]{\small\textcolor{pulsegray}{PulseIQ Documentation}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+%----------------------------------------------------------------------
+% Chapter / section formatting
+%----------------------------------------------------------------------
+\titleformat{\chapter}[display]
+  {\normalfont\Huge\bfseries\color{pulsedark}}
+  {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{pulsedark}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{pulsedark}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries\color{pulsedark}}{\thesubsubsection}{1em}{}
+
+%----------------------------------------------------------------------
+% Table of Contents styling
+%----------------------------------------------------------------------
+\renewcommand{\cftchapfont}{\bfseries\color{pulsedark}}
+\renewcommand{\cftsecfont}{\color{pulsedark}}
+
+%======================================================================
+%  DOCUMENT START
+%======================================================================
+\begin{document}
+
+%----------------------------------------------------------------------
+%  Title Page
+%----------------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+
+    {\Huge\bfseries\textcolor{pulsedark}{PulseIQ}}\\[0.5cm]
+    {\LARGE\textcolor{pulseblue}{Technical Documentation}}\\[2cm]
+
+    {\large\textcolor{pulsegray}{%
+        Advanced Employee Burnout Detection, Tracking,\\
+        and Mitigation Platform%
+    }}\\[3cm]
+
+    \rule{0.6\textwidth}{0.5pt}\\[1cm]
+
+    {\large
+        \textbf{Architecture} $\bullet$
+        \textbf{Pipeline} $\bullet$
+        \textbf{Algorithms} $\bullet$
+        \textbf{Machine Learning} $\bullet$
+        \textbf{Gen AI} $\bullet$
+        \textbf{Integration}
+    }\\[2cm]
+
+    {\large\textcolor{pulsegray}{Version 2.0 --- Now with Generative AI}}\\[0.5cm]
+    {\large\textcolor{pulsegray}{\today}}
+
+    \vfill
+\end{titlepage}
+
+%----------------------------------------------------------------------
+%  Table of Contents
+%----------------------------------------------------------------------
+\tableofcontents
+\newpage
+
+%======================================================================
+%  CHAPTER 1 — Overview & Running Instructions
+%======================================================================
+\chapter{Project Overview \& Running Instructions}
+\label{ch:overview}
+
+PulseIQ is an advanced full-stack application designed to \textbf{detect}, \textbf{track}, and \textbf{mitigate} employee burnout using a suite of statistical, behavioral, and machine learning models.
+
+%----------------------------------------------------------------------
+\section{High-Level Architecture}
+\label{sec:architecture}
+
+The system comprises three major tiers:
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+    \item \textbf{Machine Learning Pipeline (Python)}\\
+        Generates or processes synthetic workspace data across text, meetings, and code repositories to derive a cohesive, ensemble-driven \emph{Burnout Probability} per employee.
+
+    \item \textbf{Backend API (FastAPI)}\\
+        Serves the resulting metrics, time-series projections, ML predictions, and AI-driven narratives to the client.
+
+    \item \textbf{Frontend Dashboard (React / Vite)}\\
+        Gives employees and managers detailed insights, alerts, and actionable recommendations.
+\end{enumerate}
+
+%----------------------------------------------------------------------
+\section{How to Run the Program}
+\label{sec:running}
+
+The application is bundled into a unified launcher \texttt{run.py} at the project root which coordinates the ML processing and both web environments simultaneously.
+
+\subsection{Prerequisites}
+
+Before running, ensure the following are installed:
+
+\begin{itemize}
+    \item Python 3.9+
+    \item Node.js v16+
+    \item All Python and JavaScript dependencies:
+\end{itemize}
+
+\begin{lstlisting}[language=bash, caption={Installing dependencies}]
+pip install -r backend/requirements.txt
+npm install
+\end{lstlisting}
+
+\subsection{General Startup}
+
+To run the full suite (regenerate all ML data, start API, start React):
+
+\begin{lstlisting}[language=bash, caption={Full application launch}]
+python run.py
+\end{lstlisting}
+
+\subsection{Advanced Modes}
+
+\texttt{run.py} supports several configurations depending on your needs:
+
+\begin{table}[H]
+\centering
+\caption{Command-line flags for \texttt{run.py}}
+\label{tab:flags}
+\begin{tabular}{@{} l p{8.5cm} @{}}
+\toprule
+\textbf{Flag} & \textbf{Description} \\
+\midrule
+\texttt{-{}-skip-pipeline} & Skips the ML pipeline; starts only the FastAPI and Vite servers. Use when \texttt{pulseiq\_data/} is already up to date.\\[4pt]
+\texttt{-{}-skip-ml}       & Runs the standard behavioral pipeline \emph{without} the advanced ML models (LSTM, time-series, anomalies). Faster execution.\\[4pt]
+\texttt{-{}-api-only}      & Starts only the FastAPI server (\texttt{http://localhost:8000}).\\[4pt]
+\texttt{-{}-frontend-only} & Starts only the Vite UI server (\texttt{http://localhost:5173}).\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{What Happens During \texttt{python run.py}?}
+
+\begin{enumerate}
+    \item The script first runs \texttt{backend/main.py}. This orchestrates 10 sequential pipeline steps:
+    \begin{center}
+        Data Generation $\rightarrow$ Feature Building $\rightarrow$ Model Training $\rightarrow$ Scoring $\rightarrow$ Ensemble Generation $\rightarrow$ Final Reporting
+    \end{center}
+    Data artifacts are generated in \texttt{pulseiq\_data/}.
+
+    \item Upon successful pipeline completion, the system daemonizes an API server (\texttt{uvicorn}) and a development frontend server (\texttt{npm run dev}).
+
+    \item Pressing \texttt{Ctrl+C} cleanly tears down the application using automated PID trapping.
+\end{enumerate}
+
+
+%======================================================================
+%  CHAPTER 2 — Pipeline Orchestration
+%======================================================================
+\chapter{Pipeline Orchestration}
+\label{ch:pipeline}
+
+The ML pipeline is contained within \texttt{backend/main.py}, which sequences together discrete logic chunks into a deterministic execution flow.
+
+%----------------------------------------------------------------------
+\section{The STEPS Framework}
+\label{sec:steps}
+
+\texttt{main.py} registers an execution framework structured as an array of dictionaries (the \texttt{STEPS} array). It dynamically imports and invokes each module's \texttt{main()} function, gracefully catching errors at every stage.
+
+The deterministic execution sequence is:
+
+\begin{enumerate}[label=\textbf{Step \arabic*.}]
+    \item \texttt{generate\_data.py} --- Constructs the synthetic ground-truth ecosystem.
+    \item \texttt{aggregate\_features.py} --- Groups metrics by \texttt{(employee, date)} pairs for ML compatibility.
+    \item \texttt{compute\_baselines.py} --- Derives rolling personal benchmarks (what does ``normal'' mean for \emph{this} employee).
+    \item \texttt{compute\_burnout.py} --- The behavioral mathematical engine evaluating rest decay and cognitive overload.
+    \item \texttt{recommendations.py} --- Assigns tailored health guidance and alerts managers.
+    \item \texttt{manager\_insights.py} --- Pre-aggregates rollups for team-scale charting.
+    \item \texttt{run\_ml\_parallel.py} --- Kicks off the parallel deep learning jobs (Time-Series ARIMA, Isolation Forests for anomalous drops, PyTorch/TensorFlow LSTMs).
+    \item \texttt{predictive\_ensemble.py} --- Weighs all inputs to form an ultimate confidence-rated diagnosis.
+    \item \texttt{generate\_report.py} --- Builds a cohesive terminal summary of the riskiest individuals.
+\end{enumerate}
+
+%----------------------------------------------------------------------
+\section{Logging and Fault Tolerance}
+\label{sec:logging}
+
+Each step logs its status, execution elapsed time, and output object scale. The orchestrator employs a two-tier fault tolerance strategy:
+
+\begin{itemize}
+    \item \textbf{Core process failure:} If a fundamental pipeline step fails (e.g., data generation, feature engineering), \texttt{main.py} gracefully terminates the entire pipeline.
+
+    \item \textbf{Advanced ML subprocess failure:} If an advanced ML process fails (e.g., an LSTM batch taking excessive VRAM), the orchestrator yields a warning but permits the pipeline to continue onto the Predictive Ensemble with available data.
+\end{itemize}
+
+
+%======================================================================
+%  CHAPTER 3 — Data Generation & Feature Engineering
+%======================================================================
+\chapter{Data Generation \& Feature Engineering}
+\label{ch:data}
+
+Because PulseIQ models complex workplace interactions, raw ingestion mimics realistic signals an HR portal would extract from SaaS suites.
+
+%----------------------------------------------------------------------
+\section{Synthetic Data Generation}
+\label{sec:synth}
+
+\texttt{generate\_data.py} generates pseudo-random events over several weeks representing realistic workflow signals:
+
+\begin{table}[H]
+\centering
+\caption{Synthetic data sources and their dimensions}
+\label{tab:datasources}
+\begin{tabular}{@{} l p{9cm} @{}}
+\toprule
+\textbf{Source} & \textbf{What is Modeled} \\
+\midrule
+\textbf{Slack}     & Raw messaging habits---mapped as Direct Messages vs.\ Work Channels vs.\ Social Channels. \\[4pt]
+\textbf{Jira}      & Ticket comments and velocity by calculating \texttt{story\_points} assigned $\rightarrow$ resolved. \\[4pt]
+\textbf{Calendar}  & Day structures including start times and attendee counts. \\[4pt]
+\textbf{Git}       & Line additions, deletions, repo interactions, with high likelihood of weekend or after-hours commits for ``stressed'' patterns. \\[4pt]
+\textbf{Zoom}      & Call duration and active speaker engagement. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Output:} \texttt{pulseiq\_data/*\_events.csv} (and similar artifacts).
+
+%----------------------------------------------------------------------
+\section{Feature Engineering}
+\label{sec:featureeng}
+
+\texttt{aggregate\_features.py} translates the raw chronological payloads into a structured standard where each record corresponds to a unique \texttt{[Employee, Date]} pair.
+
+\subsection{After-Hours Filtering}
+
+Employs an explicit temporal boundary (\textbf{21:00--07:00}) for Git and Slack data to attribute the \texttt{after\_hours\_ratio} feature, which captures the proportion of activity occurring outside normal working hours.
+
+\subsection{RoBERTa NLP Integration}
+
+Leverages the Hugging Face \texttt{cardiffnlp/twitter-roberta-base-sentiment} pipeline:
+
+\begin{itemize}
+    \item Messages are interpreted securely, turning text into floats:
+    \[
+        \text{sentiment} \in [0.0, 1.0], \quad 1.0 = \text{highly positive}, \quad 0.0 = \text{highly negative}
+    \]
+
+    \item \textbf{Fallback mechanism:} If the local machine lacks PyTorch or Transformers, the system leverages existing synthetic baseline scores.
+
+    \item Extrapolates NLP arrays over a day into:
+    \begin{itemize}
+        \item \texttt{slack\_sentiment\_volatility} --- mathematical standard deviation ($\sigma$) of mood variance.
+        \item \texttt{slack\_avg\_stress\_score} --- fractional occurrence of trigger words such as \emph{``overloaded''}, \emph{``swamped''}, \emph{``drowning''}.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Meeting Concentration (Largest Focus Gap)}
+
+Sorts meeting interval arrays per employee, then iterates and calculates the longest continuous block spanning their schedule to measure how fragmented a workday truly is.
+
+\subsection{Zoom Engagement Ratios}
+
+Computes \texttt{zoom\_speaking\_ratio}:
+\[
+    \texttt{zoom\_speaking\_ratio} = \frac{\sum \texttt{speaking\_seconds}}{\sum \texttt{duration}}
+\]
+
+This ratio acts as a potent model proxy for social withdrawal or disconnection from collaborative activities.
+
+\textbf{Output:} \texttt{pulseiq\_data/daily\_features.csv}
+
+
+%======================================================================
+%  CHAPTER 4 — Behavioral Burnout Engine
+%======================================================================
+\chapter{Behavioral Burnout Engine}
+\label{ch:burnout}
+
+\texttt{compute\_burnout.py} is the bedrock behavioral analysis system. It maps statistical deviations of employee workflow against their personal baselines to model \emph{cognitive load}, \emph{rest deficit}, and a \emph{raw burnout scale}.
+
+%----------------------------------------------------------------------
+\section{Normalization Against Baselines}
+\label{sec:baselines}
+
+Each employee's history has a unique baseline computed by \texttt{compute\_baselines.py} using robust statistics. For instance, 10~meetings per day may be standard for product managers but highly anomalous for engineers.
+
+When calculating risk, metrics are normalized using a \textbf{Robust Z-Score} against the 14-day trailing behavior:
+
+\begin{lstlisting}[language=Python, caption={Robust Z-Score normalization}]
+def robust_z(value, median, std_robust):
+    """
+    Robust Z-Score logic avoiding zero-division
+    on uniform behavior.
+    """
+    if std_robust == 0:
+        return 0.0
+    return (value - median) / std_robust
+\end{lstlisting}
+
+Mathematically:
+\[
+    z_{\text{robust}} = \frac{x - \tilde{x}}{\hat{\sigma}_{\text{robust}}}
+\]
+
+where $\tilde{x}$ is the trailing median and $\hat{\sigma}_{\text{robust}}$ is the robust standard deviation over the past 14~days.
+
+%----------------------------------------------------------------------
+\section{The Three Pillars of Burnout}
+\label{sec:pillars}
+
+The behavioral engine decomposes burnout into three orthogonal sub-scores, each ranging from 0 to 100:
+
+\subsection{Deep Work Index (0--100)}
+
+Assesses meaningful output generation by evaluating:
+\begin{itemize}
+    \item Jira Story Points closed
+    \item Git code diffs (net lines changed)
+    \item Largest Focus Gap Minutes from calendar analysis
+\end{itemize}
+
+Each factor is evaluated as a ratio relative to the employee's benchmark metric.
+
+\subsection{Fragmentation Score (0--100)}
+
+High fragmentation destroys cognitive momentum. This score aggregates:
+\begin{itemize}
+    \item Meeting count
+    \item Slack total messages
+    \item Zoom meeting frequency
+\end{itemize}
+
+Z-scores are mapped through a non-linear $\tanh$ function, pushing maximum distraction asymptotically towards 100:
+\[
+    \text{Fragmentation} = 100 \cdot \tanh\!\left(\alpha \cdot z_{\text{agg}}\right)
+\]
+
+\subsection{Connection Index (0--100)}
+
+Measures workplace social isolation. Driven primarily by:
+\begin{itemize}
+    \item NLP-derived Slack sentiment ratios
+    \item Distinct DM partner count (peer engagement vs.\ isolation)
+    \item Zoom speaking ratios
+\end{itemize}
+
+%----------------------------------------------------------------------
+\section{Rest Deficit \& Trailing Probabilities}
+\label{sec:restdeficit}
+
+\begin{enumerate}
+    \item \textbf{Consecutive Work Days:} Tracks unrelenting strings of active contribution (after-hours commits, Jira actions on weekends).
+
+    \item \textbf{Composite Score:} Combines the three pillars against the Rest Deficit and Recovery histories to form a raw mathematical score.
+
+    \item \textbf{Sigmoid Transformation:} Converts the score to a probability in $[0, 1]$:
+    \[
+        P(\text{burnout}) = \sigma(s) = \frac{1}{1 + e^{-s}}
+    \]
+
+    \item \textbf{3-Day Simple Moving Average (SMA):} Smooths the probability so a single bad day does not misclassify someone as burnt out:
+    \[
+        \text{SMA}_3(t) = \frac{P(t) + P(t-1) + P(t-2)}{3}
+    \]
+
+    \item \textbf{Forecast to Critical:} Generates a linear slope-based projection line \texttt{forecast\_days\_until\_critical}, extrapolating when the employee's SMA will hit the $0.85$ critical zone.
+\end{enumerate}
+
+
+%======================================================================
+%  CHAPTER 5 — Machine Learning Suite
+%======================================================================
+\chapter{Machine Learning Suite}
+\label{ch:ml}
+
+The PulseIQ backend supplements the core behavioral engine with advanced time-series analysis and neural networks. Execution is coordinated by \texttt{run\_ml\_parallel.py}, which delegates individual modeling routines.
+
+%----------------------------------------------------------------------
+\section{Time-Series Analysis}
+\label{sec:timeseries}
+
+\texttt{time\_series\_analysis.py} treats the trailing probabilities of burnout as a sequential mathematical wave.
+
+\begin{itemize}
+    \item \textbf{EWMA (Exponentially Weighted Moving Average):} Highlights the macro-signal over the noise:
+    \[
+        \text{EWMA}_t = \alpha \cdot x_t + (1 - \alpha) \cdot \text{EWMA}_{t-1}
+    \]
+
+    \item \textbf{Forecasting:} Identifies the underlying behavioral distribution curve to generate forward-looking projections.
+
+    \item \textbf{Rolling Volatility:} Signifies erratic schedules or unstable work-life borders.
+
+    \item \textbf{Trend Direction:} Classifies current trajectory as \texttt{rising\_fast}, \texttt{rising}, \texttt{stable}, \texttt{declining}, etc.
+\end{itemize}
+
+\textbf{Output:} \texttt{pulseiq\_data/timeseries\_forecasts.csv}
+
+%----------------------------------------------------------------------
+\section{Anomaly Detection}
+\label{sec:anomaly}
+
+\texttt{anomaly\_detection.py} utilizes Scikit-Learn's \texttt{IsolationForest} to monitor multidimensional anomalies across dozens of variables simultaneously.
+
+\begin{itemize}
+    \item While the behavioral engine checks against an \emph{absolute} scale, the Isolation Forest maps employees \emph{dimensionally}.
+    \item It tags an event as anomalous if the employee deviates substantially from their localized clusters---for example, if they suddenly drop off Jira, shift code commitments rapidly, and withdraw from DMs overnight.
+\end{itemize}
+
+\textbf{Output:} \texttt{pulseiq\_data/anomaly\_scores.csv}, tagging exact outlier behaviors.
+
+%----------------------------------------------------------------------
+\section{Deep Learning Prediction (LSTM)}
+\label{sec:lstm}
+
+\texttt{deep\_learning\_model.py} deploys \textbf{Long Short-Term Memory} (LSTM) networks built using TensorFlow/PyTorch architectures.
+
+\begin{itemize}
+    \item LSTMs inherently retain internal cell state over multiple observations (the ``trailing sequence barrier''), enabling them to capture long-range temporal dependencies.
+
+    \item \textbf{Input:} Sequences of trailing 14--30 day \texttt{daily\_features} + \texttt{daily\_scores} data matrices.
+
+    \item \textbf{Capability:} Recognizes nonlinear patterns that signify impending drops \emph{before} traditional standard-deviation triggers fire.
+\end{itemize}
+
+\textbf{Output:} \texttt{pulseiq\_data/lstm\_predictions.csv}, carrying its own confidence mapping.
+
+
+%======================================================================
+%  CHAPTER 6 — Assembly & Integration
+%======================================================================
+\chapter{Assembly \& Integration Flow}
+\label{ch:assembly}
+
+Once the ML modeling logic concludes, PulseIQ must combine disparate findings, generate textual warnings, and format the data accurately for web transport.
+
+%----------------------------------------------------------------------
+\section{Predictive Ensemble}
+\label{sec:ensemble}
+
+\texttt{predictive\_ensemble.py} combines predictions into a unified truth. Since ML models generate varying levels of hallucination or variance, they require stabilization.
+
+\subsection{Weighted Average Framework}
+
+Models combine along a weighted average confidence framework based on model reliability:
+
+\begin{table}[H]
+\centering
+\caption{Ensemble model weights}
+\label{tab:weights}
+\begin{tabular}{@{} l c p{6.5cm} @{}}
+\toprule
+\textbf{Model} & \textbf{Weight} & \textbf{Rationale} \\
+\midrule
+Behavioral Engine     & 35\% & Deterministic engine---highest stable accuracy. \\[3pt]
+Time Series (ARIMA)   & 20\% & Moderate weight, strong pattern identifier. \\[3pt]
+LSTM Neural Network   & $30\% \times C_{\text{dyn}}$ & High weight but actively scales itself downward if the neural network is uncertain ($C_{\text{dyn}} \in [0,1]$). \\[3pt]
+Anomaly Detection     & Multiplier & If anomalous behavior triggers, amplifies underlying score estimates. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Disagreement Index}
+
+The ensemble automatically determines the \textbf{Disagreement Index} when models conflict (e.g., ARIMA predicts healthy but LSTM predicts disaster), which yields the final model confidence interval.
+
+\subsection{Risk Tier Classification}
+
+Probabilities are grouped into five risk tiers:
+
+\begin{center}
+\begin{tabular}{@{} l l @{}}
+\toprule
+\textbf{Tier} & \textbf{Probability Range} \\
+\midrule
+\texttt{CRITICAL} & $\geq 0.85$ \\
+\texttt{HIGH}     & $[0.65, 0.85)$ \\
+\texttt{MEDIUM}   & $[0.45, 0.65)$ \\
+\texttt{LOW}      & $[0.25, 0.45)$ \\
+\texttt{MINIMAL}  & $< 0.25$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Narrative Generation}
+
+The ensemble automatically composes a sentence-based narrative using rule-based parsing logic, for example:
+\begin{quote}
+    \emph{``High fragmentation from excessive meetings. A behavioral change-point was recently detected.''}
+\end{quote}
+
+%----------------------------------------------------------------------
+\section{Rule-Based Recommendations}
+\label{sec:recommendations}
+
+\texttt{recommendations.py} applies deterministic mitigation strategies mapped from resulting data flags:
+
+\begin{itemize}
+    \item \textbf{High Interruptions detected} $\rightarrow$ Schedule Focus Blocks
+    \item \textbf{After-hours pushes flagged} $\rightarrow$ Enforce Work-Life Boundary
+    \item \textbf{Workload imbalance} $\rightarrow$ Workload Reallocation (peer matching heuristic)
+\end{itemize}
+
+%----------------------------------------------------------------------
+\section{API Server}
+\label{sec:api}
+
+The Python \textbf{FastAPI} application utilizing \texttt{Uvicorn} serves as the data bridge:
+
+\begin{itemize}
+    \item Runs on \texttt{http://localhost:8000}
+    \item Configures generic CORS logic for cross-origin frontend access
+    \item Serves data endpoints:
+    \begin{itemize}
+        \item \texttt{/api/employees} --- Employee listing and metrics
+        \item \texttt{/api/health} --- Health check
+        \item \texttt{/api/suggestions} --- AI-driven recommendations
+        \item \texttt{/api/employees/\{id\}/history} --- Historical time-series data
+        \item \texttt{/api/ensemble/summary} --- Ensemble risk distribution
+    \end{itemize}
+    \item Serves Generative AI (LLM) endpoints powered by Gemini Flash (see Chapter~\ref{ch:genai}):
+    \begin{itemize}
+        \item \texttt{/api/llm/draft\_message} --- AI-drafted manager messages
+        \item \texttt{/api/llm/narrative/\{id\}} --- Dynamic employee narratives
+        \item \texttt{/api/llm/ask\_pulse} --- Natural language copilot queries
+    \end{itemize}
+    \item Loads resultant CSV artifacts directly from \texttt{pulseiq\_data/} and shapes them into normalized JSON dictionaries that the React TypeScript application natively ingests
+    \item Formats dates, safely assigns Manager structures, handles \texttt{NaN} anomalies gracefully, and builds historical time-series graphing arrays
+\end{itemize}
+
+%----------------------------------------------------------------------
+\section{Frontend Design}
+\label{sec:frontend}
+
+The React application (\texttt{src/}) binds to the FastAPI interfaces:
+
+\begin{itemize}
+    \item Built as a \textbf{Vite} application supporting auto-reload (\texttt{npm run dev})
+    \item \textbf{Manager Dashboards:} Maps directly correlated reports for team overview
+    \item \textbf{Employee Views:} Localized, personalized burnout insights
+    \item Integrates \texttt{recharts} to chart historical tracking statistics supplied by the aggregated \texttt{api.py} payloads
+\end{itemize}
+
+
+%======================================================================
+%  CHAPTER 7 — Generative AI Features (Gemini Flash)
+%======================================================================
+\chapter{Generative AI Features (Gemini Flash)}
+\label{ch:genai}
+
+PulseIQ extends its intelligence layer beyond classical ML and statistical models with \textbf{Generative AI} capabilities powered by \textbf{Google Gemini 2.5 Flash}. These features complement the deterministic pipeline by introducing natural language understanding and generation, enabling managers to interact with burnout data conversationally and communicate interventions empathetically.
+
+The Gen AI subsystem is implemented as a set of LLM-backed API endpoints within \texttt{backend/api.py}, utilizing the \texttt{google-genai} Python SDK to interface with the Gemini model.
+
+%----------------------------------------------------------------------
+\section{Architecture Overview}
+\label{sec:genai-arch}
+
+All Gen AI features follow a consistent pattern:
+
+\begin{enumerate}
+    \item \textbf{Context Assembly:} The API gathers relevant employee metrics, team data, and/or recommendation outputs from the internal data layer.
+    \item \textbf{Prompt Engineering:} A carefully structured prompt is constructed with role instructions, data context, and task-specific constraints (tone, format, length).
+    \item \textbf{LLM Invocation:} The prompt is sent to \texttt{gemini-2.5-flash} via the \texttt{google.genai} client.
+    \item \textbf{Response Delivery:} The generated text is returned to the frontend as a JSON payload.
+\end{enumerate}
+
+\begin{lstlisting}[language=Python, caption={Gemini client initialization}]
+from google import genai
+
+client = genai.Client(api_key="<GEMINI_API_KEY>")
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=prompt
+)
+\end{lstlisting}
+
+\textbf{Graceful Degradation:} All LLM endpoints are wrapped in try/except blocks. If the Gemini API is unreachable or rate-limited, the system returns a descriptive error message rather than crashing, ensuring the core deterministic pipeline continues to function independently.
+
+%----------------------------------------------------------------------
+\section{Feature 1: Empathetic Message Drafting}
+\label{sec:draft-message}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{} l l @{}}
+\toprule
+\textbf{Property} & \textbf{Value} \\
+\midrule
+Endpoint     & \texttt{POST /api/llm/draft\_message} \\
+Model        & \texttt{gemini-2.5-flash} \\
+Input        & \texttt{MessageDraftRequest} (task, from, to, reason, benefits) \\
+Output       & \texttt{\{"draft": "..."\}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+When a manager accepts a workload reallocation suggestion from the AI Task Optimizer, they may need to communicate this change to the affected employee. This endpoint uses Gemini to draft a \textbf{polite, supportive, and non-confrontational} Slack/Email message.
+
+\subsection{Prompt Design}
+
+The prompt instructs the model to act as an \emph{empathetic management assistant} and incorporates:
+\begin{itemize}
+    \item The sender and recipient names
+    \item The specific intervention (e.g., ``Workload Reallocation'', ``Schedule Focus Blocks'')
+    \item The reason for the intervention (derived from burnout metrics)
+    \item Expected benefits
+    \item Strict tone constraints: supportive, blame-free, focused on well-being
+\end{itemize}
+
+\begin{lstlisting}[language=Python, caption={Message drafting prompt structure}]
+prompt = (
+    f"You are an empathetic and professional "
+    f"management assistant.\n"
+    f"Draft a polite, supportive, and "
+    f"non-confrontational direct message "
+    f"(Slack style) from '{from_name}' to "
+    f"'{to_name}'.\n"
+    f"The goal: suggest '{task}'.\n"
+    f"Reason: {reason}\n"
+    f"Benefits: {benefits}\n"
+    f"Return only the drafted message text."
+)
+\end{lstlisting}
+
+%----------------------------------------------------------------------
+\section{Feature 2: Dynamic Employee Narratives}
+\label{sec:llm-narrative}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{} l l @{}}
+\toprule
+\textbf{Property} & \textbf{Value} \\
+\midrule
+Endpoint     & \texttt{GET /api/llm/narrative/\{employee\_id\}} \\
+Model        & \texttt{gemini-2.5-flash} \\
+Input        & Employee ID (path parameter) \\
+Output       & \texttt{\{"employeeId": "...", "narrative": "..."\}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This endpoint dynamically generates an insightful, empathetic narrative summarizing an employee's current well-being state. Unlike the rule-based narratives from \texttt{predictive\_ensemble.py} (Section~\ref{sec:ensemble}), these are generated in real-time by the LLM using the latest live metrics.
+
+\subsection{Context Injection}
+
+The following live metrics are injected into the prompt:
+\begin{itemize}
+    \item Burnout Probability (\%)
+    \item Health Status (critical / warning / healthy)
+    \item Deep Work Index (0--100)
+    \item Fragmentation Score (0--100)
+    \item Recovery Debt (hours)
+\end{itemize}
+
+The model is instructed to act as an \emph{organizational psychologist}, synthesize the numbers into insight (not just list them), identify one core challenge, and wrap with a supportive tone. The output is rendered in the Employee Detail view as an ``AI Risk Narrative'' card.
+
+%----------------------------------------------------------------------
+\section{Feature 3: Ask Pulse Copilot}
+\label{sec:ask-pulse}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{} l l @{}}
+\toprule
+\textbf{Property} & \textbf{Value} \\
+\midrule
+Endpoint     & \texttt{POST /api/llm/ask\_pulse} \\
+Model        & \texttt{gemini-2.5-flash} \\
+Input        & \texttt{AskPulseRequest} (query, optional manager\_id) \\
+Output       & \texttt{\{"response": "..."\}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \textbf{Ask Pulse Copilot} is the most sophisticated Gen AI feature. It provides a \textbf{natural language conversational interface} within the Manager Dashboard, allowing managers to ask free-form questions about their team's burnout risks, workload distribution, and anomalies.
+
+\subsection{RAG-Style Context Retrieval}
+
+Ask Pulse simulates a \textbf{Retrieval-Augmented Generation (RAG)} architecture over PulseIQ's internal API:
+
+\begin{enumerate}
+    \item \textbf{Contextual data retrieval:} Before prompting the LLM, the endpoint calls internal functions to gather:
+    \begin{itemize}
+        \item All employees and their current metrics (filtered by \texttt{manager\_id} if provided)
+        \item All pending workload intervention suggestions
+    \end{itemize}
+
+    \item \textbf{Context injection:} The gathered data is serialized and injected into the prompt as an ``\texttt{INTERNAL DATA CONTEXT}'' block.
+
+    \item \textbf{Query resolution:} The manager's natural language question is appended, and Gemini answers using the provided real-time data.
+\end{enumerate}
+
+\begin{lstlisting}[language=Python, caption={Ask Pulse RAG-style prompt}]
+# Gather real-time context
+emps = get_employees(req.manager_id)
+suggestions = get_suggestions(req.manager_id)
+context_str = f"Employees: {emps}\n"
+              f"Interventions: {suggestions}"
+
+prompt = (
+    f"You are 'Ask Pulse', the AI Copilot "
+    f"for PulseIQ.\n"
+    f"--- INTERNAL DATA CONTEXT ---\n"
+    f"{context_str}\n"
+    f"--- MANAGER'S QUERY ---\n"
+    f"{req.query}\n"
+)
+\end{lstlisting}
+
+\subsection{Frontend Integration}
+
+The Ask Pulse Copilot is accessible as a dedicated navigation tab in the Manager Dashboard. It features:
+
+\begin{itemize}
+    \item A \textbf{chat-style interface} with user and AI message bubbles
+    \item Real-time loading indicators (animated typing dots)
+    \item Markdown rendering support for structured LLM responses
+    \item Manager-scoped context (only shows data for the logged-in manager's reports)
+\end{itemize}
+
+Example queries a manager can ask:
+\begin{quote}
+    \emph{``Who on my team is most at risk of burnout right now?''}\\
+    \emph{``What's the best way to redistribute Sarah's workload?''}\\
+    \emph{``Are there any anomalies I should be aware of this week?''}
+\end{quote}
+
+%----------------------------------------------------------------------
+\section{Pydantic Request Schemas}
+\label{sec:genai-schemas}
+
+The Gen AI endpoints use typed Pydantic models for input validation:
+
+\begin{lstlisting}[language=Python, caption={Gen AI request schemas}]
+class MessageDraftRequest(BaseModel):
+    task: str          # e.g., "Workload Reallocation"
+    from_name: str     # Manager name
+    to_name: str       # Employee name
+    reason: str        # Why the intervention
+    benefits: List[str]# Expected outcomes
+
+class AskPulseRequest(BaseModel):
+    query: str                     # Free-form question
+    manager_id: Optional[str] = None  # Scope context
+\end{lstlisting}
+
+
+%======================================================================
+%  APPENDIX — Quick Reference
+%======================================================================
+\appendix
+\chapter{Quick Reference}
+\label{app:quickref}
+
+\section{Project Directory Structure}
+
+\begin{lstlisting}[language={}, caption={Key project directories and files}]
+pulsefinal/
+|-- run.py                    # Unified launcher
+|-- backend/
+|   |-- main.py               # Pipeline orchestrator
+|   |-- api.py                # FastAPI server
+|   |-- generate_data.py      # Synthetic data generator
+|   |-- aggregate_features.py # Feature engineering
+|   |-- compute_baselines.py  # Rolling baselines
+|   |-- compute_burnout.py    # Behavioral engine
+|   |-- recommendations.py    # Rule-based suggestions
+|   |-- manager_insights.py   # Team rollups
+|   |-- run_ml_parallel.py    # ML job coordinator
+|   |-- time_series_analysis.py
+|   |-- anomaly_detection.py
+|   |-- deep_learning_model.py
+|   |-- predictive_ensemble.py
+|   |-- generate_report.py
+|   `-- requirements.txt
+|-- src/                      # React/Vite frontend
+|-- pulseiq_data/             # Generated data artifacts
+`-- Docs/                     # This documentation
+\end{lstlisting}
+
+\section{Generated Data Artifacts}
+
+\begin{table}[H]
+\centering
+\caption{Key CSV artifacts produced by the pipeline}
+\begin{tabular}{@{} l p{8cm} @{}}
+\toprule
+\textbf{File} & \textbf{Description} \\
+\midrule
+\texttt{*\_events.csv}            & Raw synthetic event data per source \\
+\texttt{daily\_features.csv}      & Engineered features per (employee, date) \\
+\texttt{daily\_scores.csv}        & Behavioral burnout scores \\
+\texttt{timeseries\_forecasts.csv}& EWMA and trend forecasts \\
+\texttt{anomaly\_scores.csv}      & Isolation Forest anomaly tags \\
+\texttt{lstm\_predictions.csv}    & LSTM neural network predictions \\
+\texttt{ensemble\_results.csv}    & Final combined predictions \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Key Mathematical Formulas}
+
+\begin{table}[H]
+\centering
+\caption{Summary of core mathematical formulas}
+\begin{tabular}{@{} l l @{}}
+\toprule
+\textbf{Concept} & \textbf{Formula} \\
+\midrule
+Robust Z-Score        & $z = \dfrac{x - \tilde{x}}{\hat{\sigma}_{\text{robust}}}$ \\[10pt]
+Fragmentation         & $F = 100 \cdot \tanh(\alpha \cdot z_{\text{agg}})$ \\[10pt]
+Burnout Probability   & $P = \sigma(s) = \dfrac{1}{1 + e^{-s}}$ \\[10pt]
+3-Day SMA             & $\text{SMA}_3(t) = \dfrac{P(t) + P(t\!-\!1) + P(t\!-\!2)}{3}$ \\[10pt]
+EWMA                  & $E_t = \alpha x_t + (1-\alpha) E_{t-1}$ \\[10pt]
+Zoom Speaking Ratio   & $r = \dfrac{\sum \text{speaking\_sec}}{\sum \text{duration}}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%----------------------------------------------------------------------
+\end{document}
