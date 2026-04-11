@@ -1,10 +1,26 @@
+"""
+PulseIQ — FastAPI Backend (V5.0: Full ML Suite)
+=================================================
+Serves all PulseIQ data to the React frontend, including:
+  - Employee burnout stats (V4.x sub-scores + ensemble predictions)
+  - Time-series forecasts and trend directions
+  - Anomaly detection alerts
+  - LSTM deep learning predictions
+  - Actionable recommendations and suggestions
+  - Manager dashboard data
+"""
+
 import os
 import pandas as pd
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any
 
-app = FastAPI()
+app = FastAPI(
+    title="PulseIQ API",
+    description="Burnout Detection & Prediction Intelligence API",
+    version="5.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,44 +48,90 @@ def get_employees_data():
     emp_df = load_csv("employees.csv")
     view_df = load_csv("manager_employees_view.csv")
     scores_df = load_csv("daily_scores.csv")
-    
-    if emp_df.empty or view_df.empty or scores_df.empty:
+    ensemble_df = load_csv("ensemble_predictions.csv")
+
+    if emp_df.empty or scores_df.empty:
         return []
 
     # Get latest scores per employee
     latest_scores = scores_df.sort_values("date").groupby("employee_id").last().reset_index()
-    
-    merged = pd.merge(emp_df, view_df, on="employee_id", how="left")
+
+    # Get latest ensemble predictions if available
+    latest_ensemble = pd.DataFrame()
+    if not ensemble_df.empty:
+        latest_ensemble = ensemble_df.sort_values("date").groupby("employee_id").last().reset_index()
+
+    merged = emp_df.copy()
+    if not view_df.empty:
+        merged = pd.merge(merged, view_df, on="employee_id", how="left")
     merged = pd.merge(merged, latest_scores, on="employee_id", how="left", suffixes=("", "_score"))
-    
+
+    if not latest_ensemble.empty:
+        merged = pd.merge(merged, latest_ensemble[["employee_id", "ensemble_prob", "confidence", "risk_tier"]],
+                          on="employee_id", how="left")
+
     employees = []
-    
+
     for _, row in merged.iterrows():
         # Assign manager based on team
         manager_id = 'm1' if row.get("team") == "Engineering" else 'm2'
-        
+
         # Calculate simulated productivity based on deep work and capacity
         cap = row.get("capacity_hours", 30)
+        if pd.isna(cap):
+            cap = 30
         productivity = min(100, int((cap / 30.0) * 100))
-        
+
         # Default predictions
         forecast = row.get("forecast_days_until_critical", "Stable")
         if pd.isna(forecast) or forecast == "":
             forecast = "Stable"
         elif isinstance(forecast, (int, float)):
             forecast = f"{int(forecast)} Days"
-            
+
         b_prob = row.get("burnout_probability", 0.0)
         if pd.isna(b_prob):
             b_prob = 0.0
-            
-        status = 'critical' if row.get("risk_level") == "CRITICAL" else 'healthy'
-            
+
+        # Determine status from risk_level or ensemble tier
+        risk_level = row.get("risk_level", "")
+        ensemble_tier = row.get("risk_tier", "")
+        if risk_level == "CRITICAL" or ensemble_tier in ("CRITICAL", "HIGH"):
+            status = 'critical'
+        elif risk_level == "WARNING" or ensemble_tier == "MEDIUM":
+            status = 'warning'
+        else:
+            status = 'healthy'
+
         deep_idx = row.get("deep_work_index", 50)
         if pd.isna(deep_idx):
-             deep_idx = 50
-             
-        # Create AppUser schema implicitly if querying users, but this is the EmployeeStat model
+            deep_idx = 50
+
+        frag_score = row.get("fragmentation_score", 0)
+        if pd.isna(frag_score):
+            frag_score = 0
+
+        conn_idx = row.get("connection_index", 50)
+        if pd.isna(conn_idx):
+            conn_idx = 50
+
+        recovery = row.get("recovery_debt", 0)
+        if pd.isna(recovery):
+            recovery = 0
+
+        # Ensemble probability (if available)
+        ensemble_prob = row.get("ensemble_prob", None)
+        if pd.isna(ensemble_prob) if isinstance(ensemble_prob, float) else ensemble_prob is None:
+            ensemble_prob = None
+
+        confidence = row.get("confidence", None)
+        if pd.isna(confidence) if isinstance(confidence, float) else confidence is None:
+            confidence = None
+
+        drivers = row.get("driving_factors", "")
+        if pd.isna(drivers):
+            drivers = ""
+
         emp = {
             "id": row["employee_id"],
             "name": row["name"],
@@ -80,10 +142,17 @@ def get_employees_data():
             "managerId": manager_id,
             "burnoutIndex": round(b_prob * 10, 1),
             "predictedBurnout": str(forecast),
-            "deepWorkIndex": int(deep_idx)
+            "deepWorkIndex": int(deep_idx),
+            "fragmentationScore": round(float(frag_score), 1),
+            "connectionIndex": round(float(conn_idx), 1),
+            "recoveryDebt": round(float(recovery), 1),
+            "drivingFactors": str(drivers),
+            "ensembleProb": round(float(ensemble_prob), 4) if ensemble_prob is not None else None,
+            "ensembleConfidence": round(float(confidence), 4) if confidence is not None else None,
+            "riskTier": str(ensemble_tier) if ensemble_tier else None,
         }
         employees.append(emp)
-        
+
     return employees
 
 @app.get("/api/users")
@@ -110,7 +179,7 @@ def login(username: str):
         if uid.lower() == target:
             user = udata
             break
-            
+
     if not user:
         # Check by name matching if not found by ID
         for u in users.values():
@@ -126,6 +195,92 @@ def get_employees(manager_id: str = None):
         return [e for e in all_emps if e["managerId"] == manager_id]
     return all_emps
 
+@app.get("/api/employee/{employee_id}/history")
+def get_employee_history(employee_id: str):
+    """Get burnout probability history for a specific employee (for time-series charts)."""
+    scores_df = load_csv("daily_scores.csv")
+    if scores_df.empty:
+        return []
+
+    emp_scores = scores_df[scores_df["employee_id"] == employee_id].sort_values("date")
+
+    history = []
+    for _, row in emp_scores.iterrows():
+        bp = row.get("burnout_probability")
+        if pd.isna(bp):
+            continue
+        history.append({
+            "date": row["date"],
+            "burnoutProbability": round(float(bp), 4),
+            "deepWorkIndex": float(row.get("deep_work_index", 0) or 0),
+            "fragmentationScore": float(row.get("fragmentation_score", 0) or 0),
+            "connectionIndex": float(row.get("connection_index", 0) or 0),
+            "recoveryDebt": float(row.get("recovery_debt", 0) or 0),
+        })
+    return history
+
+@app.get("/api/employee/{employee_id}/anomalies")
+def get_employee_anomalies(employee_id: str):
+    """Get anomaly detection results for a specific employee."""
+    anomaly_df = load_csv("anomaly_scores.csv")
+    if anomaly_df.empty:
+        return []
+
+    emp_anom = anomaly_df[anomaly_df["employee_id"] == employee_id].sort_values("date")
+    anomalies = []
+    for _, row in emp_anom.iterrows():
+        if str(row.get("is_anomaly", "False")) == "True":
+            anomalies.append({
+                "date": row["date"],
+                "isolationScore": float(row.get("isolation_score", 0) or 0),
+                "triggerFeature": str(row.get("anomaly_features", "")),
+                "zScoreMax": float(row.get("z_score_max", 0) or 0),
+                "patternShift": float(row.get("pattern_shift_score", 0) or 0),
+            })
+    return anomalies
+
+@app.get("/api/employee/{employee_id}/forecast")
+def get_employee_forecast(employee_id: str):
+    """Get time-series forecast for a specific employee."""
+    ts_df = load_csv("timeseries_summary.csv")
+    if ts_df.empty:
+        return {}
+
+    emp_row = ts_df[ts_df["employee_id"] == employee_id]
+    if emp_row.empty:
+        return {}
+
+    row = emp_row.iloc[0]
+    return {
+        "currentProb": float(row.get("current_prob", 0) or 0),
+        "ewmaCurrent": float(row.get("ewma_current", 0) or 0),
+        "forecast7dAvg": float(row.get("forecast_7d_avg", 0) or 0),
+        "forecast14dAvg": float(row.get("forecast_14d_avg", 0) or 0),
+        "forecast7dMax": float(row.get("forecast_7d_max", 0) or 0),
+        "forecast14dMax": float(row.get("forecast_14d_max", 0) or 0),
+        "trendDirection": str(row.get("trend_direction", "")),
+        "numChangepoints": int(row.get("num_changepoints", 0) or 0),
+        "avgVolatility": float(row.get("avg_volatility", 0) or 0),
+    }
+
+@app.get("/api/narratives")
+def get_narratives():
+    """Get AI-generated risk narratives for all employees."""
+    narr_df = load_csv("pulseiq_narratives.csv")
+    if narr_df.empty:
+        return []
+
+    narratives = []
+    for _, row in narr_df.iterrows():
+        narratives.append({
+            "employeeId": row.get("employee_id", ""),
+            "name": row.get("name", ""),
+            "ensembleProb": float(row.get("ensemble_prob", 0) or 0),
+            "riskTier": row.get("risk_tier", ""),
+            "narrative": row.get("narrative", ""),
+        })
+    return narratives
+
 @app.get("/api/suggestions")
 def get_suggestions(manager_id: str = None):
     recs_df = load_csv("recommendations.csv")
@@ -134,24 +289,24 @@ def get_suggestions(manager_id: str = None):
 
     # Get latest recommendations per employee
     latest_recs = recs_df.sort_values("date").groupby("employee_id").last().reset_index()
-    
+
     # We need to map recommendations to tasks.
     # The frontend expects: { id, task, from, to, reason, benefits, status, managerId }
     emps = get_employees_data()
     emp_map = {e["id"]: e for e in emps}
-    
+
     suggestions = []
     sid = 1
-    
+
     for _, row in latest_recs.iterrows():
         eid = row["employee_id"]
         emp = emp_map.get(eid)
         if not emp:
             continue
-            
+
         if manager_id and emp["managerId"] != manager_id:
             continue
-            
+
         recs_str = str(row.get("recommendations", ""))
         if "High burnout risk" in recs_str or "Critical" in recs_str or "critical" in recs_str:
             # Create a reallocation suggestion
@@ -159,7 +314,7 @@ def get_suggestions(manager_id: str = None):
             # Find a healthy employee under the same manager
             healthy_peers = [e for e in emps if e["managerId"] == emp["managerId"] and e["status"] == "healthy" and e["id"] != eid]
             to_name = healthy_peers[0]["name"] if healthy_peers else "Available Peer"
-            
+
             suggestions.append({
                 "id": sid,
                 "task": task_name,
@@ -171,7 +326,7 @@ def get_suggestions(manager_id: str = None):
                 "managerId": emp["managerId"]
             })
             sid += 1
-            
+
         if "High interruptions" in recs_str or "fragmentation" in recs_str.lower():
             suggestions.append({
                 "id": sid,
@@ -185,4 +340,80 @@ def get_suggestions(manager_id: str = None):
             })
             sid += 1
 
+        if "After-hours" in recs_str or "weekend commits" in recs_str.lower():
+            suggestions.append({
+                "id": sid,
+                "task": "Enforce Work-Life Boundary",
+                "from": emp["name"],
+                "to": "Team Lead",
+                "reason": "After-hours/weekend work detected via Git and Slack.",
+                "benefits": ["Prevents chronic fatigue", "Improves recovery"],
+                "status": "pending",
+                "managerId": emp["managerId"]
+            })
+            sid += 1
+
+        if "Zoom" in recs_str or "speaking" in recs_str.lower():
+            suggestions.append({
+                "id": sid,
+                "task": "Reduce Zoom Load",
+                "from": emp["name"],
+                "to": "Calendar/System",
+                "reason": "Excessive Zoom meetings or disengagement detected.",
+                "benefits": ["Reduces meeting fatigue", "Improves focus time"],
+                "status": "pending",
+                "managerId": emp["managerId"]
+            })
+            sid += 1
+
     return suggestions
+
+@app.get("/api/ensemble/summary")
+def get_ensemble_summary():
+    """Get ensemble risk distribution summary."""
+    ensemble_df = load_csv("ensemble_predictions.csv")
+    if ensemble_df.empty:
+        return {"distribution": {}, "models_available": []}
+
+    latest = ensemble_df.sort_values("date").groupby("employee_id").last().reset_index()
+
+    distribution = latest["risk_tier"].value_counts().to_dict()
+    avg_confidence = float(latest["confidence"].mean()) if "confidence" in latest.columns else 0
+
+    models = ["behavioral"]
+    if "timeseries_prob" in latest.columns and latest["timeseries_prob"].notna().any():
+        models.append("timeseries")
+    if "lstm_prob" in latest.columns and latest["lstm_prob"].notna().any():
+        models.append("lstm")
+    if "is_anomaly" in latest.columns:
+        models.append("anomaly")
+
+    return {
+        "distribution": distribution,
+        "averageConfidence": round(avg_confidence, 4),
+        "totalEmployees": len(latest),
+        "modelsAvailable": models,
+    }
+
+@app.get("/api/health")
+def health_check():
+    """API health check showing available data files."""
+    files = [
+        "employees.csv", "daily_features.csv", "baselines.csv",
+        "daily_scores.csv", "recommendations.csv", "manager_dashboard.csv",
+        "timeseries_forecasts.csv", "anomaly_scores.csv",
+        "lstm_predictions.csv", "ensemble_predictions.csv",
+        "pulseiq_summary.csv", "pulseiq_narratives.csv",
+    ]
+    status = {}
+    for f in files:
+        path = os.path.join(DATA_DIR, f)
+        status[f] = {
+            "exists": os.path.exists(path),
+            "size": os.path.getsize(path) if os.path.exists(path) else 0,
+        }
+    return {
+        "status": "ok",
+        "version": "5.0",
+        "dataFiles": status,
+    }

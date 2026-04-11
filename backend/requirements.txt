@@ -1,4 +1,30 @@
+# ============================================================================
+# PulseIQ Backend Dependencies (V5.0: Full ML Suite)
+# ============================================================================
+
+# --- Core API ---
 fastapi
 uvicorn
-pandas
 python-multipart
+
+# --- Data Processing ---
+pandas
+numpy
+
+# --- NLP / Sentiment Analysis ---
+transformers          # HuggingFace RoBERTa sentiment model
+torch                 # PyTorch backend for transformers
+
+# --- Machine Learning ---
+scikit-learn          # Isolation Forest, preprocessing, metrics
+xgboost               # XGBoost classifier (burnout model)
+shap                  # SHAP feature importance explanations
+
+# --- Time-Series Analysis ---
+statsmodels           # ARIMA, seasonal decomposition, statistical tests
+
+# --- Deep Learning ---
+tensorflow            # LSTM bidirectional model for sequential prediction
+
+# --- Visualization (optional, for reports) ---
+matplotlib

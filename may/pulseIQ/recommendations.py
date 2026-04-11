@@ -26,6 +26,14 @@ OUTPUT_FILE = "pulseiq_data/recommendations.csv"
 # Extended to cover SHAP-derived feature names from compute_burnout.py
 # ---------------------------------------------------------------------------
 
+# Each entry: (match_fn, recommendations_list)
+# match_fn takes (factor_str, row_dict) and returns True/False
+# Evaluated in order; multiple entries can match.
+
+def _f(factors, row):
+    """Shorthand: parsed factor list + numeric row values."""
+    return factors, row
+
 def generate_recommendations(row):
     recs = []
 

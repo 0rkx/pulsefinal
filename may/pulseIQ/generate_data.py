@@ -131,14 +131,6 @@ def main():
     for i in range(len(employees) + 1, 31):
         employees.append({"employee_id": f"E{i:03d}", "name": f"Employee {i}", "team": "Engineering", "persona": "healthy"})
 
-    # Write employees.csv
-    emp_f = open(OUTPUT_DIR / "employees.csv", "w", newline="")
-    emp_w = csv.writer(emp_f)
-    emp_w.writerow(["employee_id", "name", "team", "persona"])
-    for emp in employees:
-        emp_w.writerow([emp["employee_id"], emp["name"], emp["team"], emp["persona"]])
-    emp_f.close()
-
     slack_f = open(OUTPUT_DIR / "slack_messages.csv",  "w", newline="")
     jira_f  = open(OUTPUT_DIR / "jira_events.csv",     "w", newline="")
     cal_f   = open(OUTPUT_DIR / "calendar_events.csv", "w", newline="")
@@ -167,8 +159,7 @@ def main():
             for i in range(profile["msg_count_work"] + profile["msg_count_social"] + profile["msg_count_dms"]):
                 msg_idx += 1
                 ts = after_hours_ts(dt) if profile["after_hours"] else dt.replace(hour=jitter_minutes(14)[0], minute=jitter_minutes(14)[1])
-                text = pick_message_text(profile["sentiment"], "#work")
-                slack_w.writerow([f"M{msg_idx:07d}", eid, fmt_ts(ts), "#work", len(text), "false", "", profile["sentiment"], text])
+                slack_w.writerow([f"M{msg_idx:07d}", eid, fmt_ts(ts), "#work", 20, "false", "", profile["sentiment"], "Update."])
 
             # Jira
             for _ in range(profile["tickets_touched"]):
