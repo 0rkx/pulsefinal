@@ -3,36 +3,172 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+  font-family: 'Inter', sans-serif;
 }
 
+/* =====================================================
+   Lucid Gallery — Mesh Gradient Foundation
+   ===================================================== */
 body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9ff;
+  background-image:
+    radial-gradient(at 0% 0%, #7ca5f6 0px, transparent 50%),
+    radial-gradient(at 100% 0%, #d3c8f9 0px, transparent 50%),
+    radial-gradient(at 100% 100%, #f1f3fb 0px, transparent 50%),
+    radial-gradient(at 0% 100%, #ffffff 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #2d333b;
 }
 
-/* Custom scrollbar for premium feel */
+/* =====================================================
+   Glass Surface Utilities
+   ===================================================== */
+@layer components {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  .glass-sidebar {
+    background: rgba(248, 249, 255, 0.5);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-topbar {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 40px rgba(45, 51, 59, 0.04);
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #305ea9, #7ca5f6);
+  }
+
+  /* Ghost border — accessible but barely visible */
+  .ghost-border {
+    outline: 1px solid rgba(172, 178, 189, 0.15);
+  }
+
+  /* Ambient hover state */
+  .glass-hover {
+    transition: background 0.2s, backdrop-filter 0.2s;
+  }
+
+  .glass-hover:hover {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+  }
+
+  /* Pulsing status dot */
+  .status-dot-critical {
+    @apply relative inline-flex;
+  }
+  .status-dot-critical::before {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-red-400 opacity-75 animate-ping;
+  }
+}
+
+/* =====================================================
+   Scrollbar — Light Mode
+   ===================================================== */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: rgba(241, 243, 251, 0.6);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
-  border-radius: 4px;
+  background: rgba(172, 178, 189, 0.5);
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: rgba(117, 123, 133, 0.6);
 }
 
-/* Smooth transitions */
+/* =====================================================
+   Smooth Transitions — non-layout props only
+   ===================================================== */
 * {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-property: color, background-color, border-color, box-shadow, opacity, backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+/* =====================================================
+   Material Symbols
+   ===================================================== */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-size: 20px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* =====================================================
+   Recharts — adapt to light theme
+   ===================================================== */
+.recharts-cartesian-grid-horizontal line {
+  stroke: rgba(172, 178, 189, 0.2);
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(172, 178, 189, 0.3) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 40px rgba(45, 51, 59, 0.08) !important;
+  color: #2d333b !important;
+}
+
+/* =====================================================
+   Animations
+   ===================================================== */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.45s ease both;
+}
+
+@keyframes spinnerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Orbital ring animation for employee wellness dial */
+@keyframes orbitSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.orbit-ring {
+  animation: orbitSpin 8s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes burnoutPulse {
+  0%, 100% { r: 6; opacity: 0.8; }
+  50% { r: 10; opacity: 0.4; }
 }

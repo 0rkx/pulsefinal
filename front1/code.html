@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LucidAnalytics - Manager Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#514972",
+                        "tertiary-fixed": "#d3c8f9",
+                        "on-tertiary-container": "#484068",
+                        "secondary-fixed": "#d7e3f8",
+                        "on-surface": "#2d333b",
+                        "on-background": "#2d333b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#515c6d",
+                        "surface-variant": "#dde3ee",
+                        "surface-container-high": "#e4e8f2",
+                        "inverse-on-surface": "#9b9da2",
+                        "secondary": "#546071",
+                        "on-surface-variant": "#595f69",
+                        "tertiary-dim": "#564d77",
+                        "on-secondary-fixed": "#344050",
+                        "primary-fixed-dim": "#6e98e7",
+                        "inverse-primary": "#7ca5f6",
+                        "on-error-container": "#6e0a12",
+                        "tertiary": "#625983",
+                        "outline-variant": "#acb2bd",
+                        "outline": "#757b85",
+                        "on-primary-container": "#002657",
+                        "surface-dim": "#d5dae5",
+                        "surface-tint": "#305ea9",
+                        "primary-fixed": "#7ca5f6",
+                        "error": "#a83836",
+                        "on-primary-fixed": "#000617",
+                        "secondary-fixed-dim": "#c9d5e9",
+                        "surface-container-highest": "#dde3ee",
+                        "background": "#f8f9ff",
+                        "on-error": "#fff7f6",
+                        "error-container": "#fa746f",
+                        "error-dim": "#67040d",
+                        "on-primary": "#f9f8ff",
+                        "inverse-surface": "#0b0e12",
+                        "primary": "#305ea9",
+                        "tertiary-container": "#d3c8f9",
+                        "on-secondary-container": "#475363",
+                        "surface-container": "#eaeef7",
+                        "primary-container": "#7ca5f6",
+                        "on-primary-fixed-variant": "#002f68",
+                        "surface-container-low": "#f1f3fb",
+                        "primary-dim": "#20519c",
+                        "secondary-dim": "#485465",
+                        "surface": "#f8f9ff",
+                        "on-secondary": "#f7f9ff",
+                        "surface-bright": "#f8f9ff",
+                        "tertiary-fixed-dim": "#c5baeb",
+                        "secondary-container": "#d7e3f8",
+                        "on-tertiary-fixed": "#342c54",
+                        "on-tertiary": "#fdf7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        body {
+            background: 
+                radial-gradient(at 0% 0%, #7ca5f6 0px, transparent 50%),
+                radial-gradient(at 100% 0%, #d3c8f9 0px, transparent 50%),
+                radial-gradient(at 100% 100%, #f1f3fb 0px, transparent 50%),
+                radial-gradient(at 0% 100%, #ffffff 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(32px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-body text-on-surface">
+<!-- Sidebar (Shared Component Style) -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50/40 backdrop-blur-2xl border-r border-white/10 flex flex-col p-6 gap-2 z-50">
+<div class="mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold">L</div>
+<div>
+<h2 class="text-lg font-extrabold text-blue-700 font-headline leading-tight">Enterprise Core</h2>
+<p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Global Analytics</p>
+</div>
+</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 bg-white/60 text-blue-600 rounded-xl shadow-sm font-medium transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Overview
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-200/30 hover:text-slate-800 rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">insights</span>
+                Performance
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-200/30 hover:text-slate-800 rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">query_stats</span>
+                Forecasting
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-200/30 hover:text-slate-800 rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+                Teams
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-200/30 hover:text-slate-800 rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">description</span>
+                Reports
+            </a>
+</nav>
+<div class="mt-auto pt-6 border-t border-slate-200/20">
+<button class="w-full py-3 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform">
+                Generate Report
+            </button>
+<a class="flex items-center gap-3 px-4 py-3 mt-4 text-slate-500 hover:text-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+                Help Center
+            </a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 min-h-screen p-8">
+<!-- Top Bar (Shared Component Style) -->
+<header class="sticky top-0 z-40 w-full mb-8 flex justify-between items-center px-8 py-4 bg-white/20 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_rgba(45,51,59,0.04)]">
+<h1 class="text-2xl font-bold font-headline text-slate-800 tracking-tight">Manager Dashboard</h1>
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</span>
+<input class="pl-10 pr-4 py-2 bg-white/50 border-none rounded-xl focus:ring-2 focus:ring-primary w-64 text-sm outline-none transition-all" placeholder="Search analytics..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="User profile" class="w-10 h-10 rounded-full border-2 border-white shadow-sm" data-alt="Close-up portrait of a professional manager in a clean, bright office setting with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCX5l_WNXPbeostRXz_gmLdlnO8QouWABIX0bMd0tklB94OCNKwCOTTnF8x_0hur3QYRF_FjxAvoq1Xac53YotvjopJBxdnSXtLDf36ujNgsrjDbONRcQM4MiDxlHjffazFB36vXcjYeweary1tfXvs4Z-cg0mr8OqmOB5DEITNWFn30G-DihV7qCkl78gcAS6eFFkDXdqJ0P8rUinikCPfoJlTX8HDph43REGFcvYNYIpKZXSB1IjH67u7lUaPYmwRLEqWs4IWOEDE"/>
+</div>
+</div>
+</header>
+<!-- Bento Grid Stats -->
+<div class="grid grid-cols-12 gap-6 mb-12">
+<!-- Critical Alerts -->
+<div class="col-span-12 lg:col-span-4 glass-card p-6 rounded-2xl relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4">
+<span class="flex h-3 w-3 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-error"></span>
+</span>
+</div>
+<h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Critical Alerts</h3>
+<div class="space-y-4">
+<div class="flex items-start gap-4 p-3 rounded-xl bg-error-container/10 border border-error/10">
+<span class="material-symbols-outlined text-error" data-weight="fill">warning</span>
+<div>
+<p class="text-sm font-bold text-on-surface">3 high burnout risks detected</p>
+<p class="text-xs text-on-surface-variant">Immediate intervention recommended for Engineering Team A.</p>
+</div>
+</div>
+<div class="flex items-start gap-4 p-3 rounded-xl bg-tertiary-container/20 border border-tertiary/10">
+<span class="material-symbols-outlined text-tertiary" data-weight="fill">schedule</span>
+<div>
+<p class="text-sm font-bold text-on-surface">System recovery scheduled</p>
+<p class="text-xs text-on-surface-variant">Automatic workload shifting starting at 6:00 PM.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Team Recovery Debt -->
+<div class="col-span-12 md:col-span-6 lg:col-span-4 glass-card p-6 rounded-2xl">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest">Team Recovery Debt</h3>
+<p class="text-4xl font-extrabold font-headline text-on-surface mt-2">12.4h <span class="text-sm font-medium text-error">-15%</span></p>
+</div>
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-weight="fill">battery_alert</span>
+</div>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mb-2">
+<div class="h-full bg-primary w-[75%] rounded-full"></div>
+</div>
+<p class="text-xs text-on-surface-variant">Recovery window needs to increase by 2.2h per member.</p>
+</div>
+<!-- Work Fragmentation -->
+<div class="col-span-12 md:col-span-6 lg:col-span-4 glass-card p-6 rounded-2xl">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest">Work Fragmentation</h3>
+<p class="text-4xl font-extrabold font-headline text-on-surface mt-2">64% <span class="text-sm font-medium text-primary-fixed-dim">+8%</span></p>
+</div>
+<div class="w-12 h-12 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-weight="fill">bubble_chart</span>
+</div>
+</div>
+<div class="flex gap-1 h-2">
+<div class="flex-1 bg-primary rounded-full"></div>
+<div class="flex-[0.5] bg-tertiary rounded-full"></div>
+<div class="flex-[0.3] bg-outline-variant rounded-full"></div>
+</div>
+<p class="text-xs text-on-surface-variant mt-3">High context switching detected during 2PM - 4PM window.</p>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-8">
+<!-- Detailed Employee Section: Ishaan Verma -->
+<div class="col-span-12 lg:col-span-8 space-y-8">
+<div class="glass-panel p-8 rounded-2xl">
+<div class="flex flex-col md:flex-row justify-between gap-6 mb-8">
+<div class="flex items-center gap-6">
+<div class="relative">
+<img alt="Ishaan Verma" class="w-20 h-20 rounded-2xl object-cover shadow-lg" data-alt="Professional headshot of a young man with a warm expression in a modern, brightly lit minimalist studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU-Lf-fz4n5AhP7TMik2v-bxVH-HkTxB1x_lwrVGJ3bxJYHB8t8ouqkDXRZ4eI0bYrL-6fpyddcMLahWX7Dxjf2tQRAMa88b-XE1bZ8WUG1_oE1waGoVF5Mh-i5UWcWjBbeVjgDTAy2ZiHoCUw5_d5ibAclPLBuSwXgy38HrcYROd0Zyc2P3GUbGY7jk8lo5ReHUfWIVpPQ0s_k5WUVDEvIKMyVbeCP6TVSdGoWfFzhp68cv_3XhNyFU8t5hXrPlQnf-TpTku3yIEH"/>
+<div class="absolute -bottom-2 -right-2 bg-error text-white text-[10px] px-2 py-1 rounded-lg font-bold">BURN STATUS</div>
+</div>
+<div>
+<h2 class="text-2xl font-extrabold font-headline text-on-surface">Ishaan Verma</h2>
+<p class="text-on-surface-variant font-medium">Senior Software Engineer • Platform Team</p>
+<div class="flex gap-2 mt-2">
+<span class="px-3 py-1 bg-error-container/20 text-error-container text-xs font-bold rounded-full">High Fatigue</span>
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container text-xs font-bold rounded-full">P0 Target</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white/40 p-3 rounded-xl border border-white/20">
+<p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Recovery Debt</p>
+<p class="text-xl font-extrabold text-error">4.8h</p>
+</div>
+<div class="bg-white/40 p-3 rounded-xl border border-white/20">
+<p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Focus Time</p>
+<p class="text-xl font-extrabold text-primary">1.2h</p>
+</div>
+</div>
+</div>
+<!-- Fatigue Trend Chart Simulation -->
+<div class="mb-6">
+<h4 class="text-sm font-bold text-on-surface-variant mb-4">Fatigue Trend (Last 7 Days)</h4>
+<div class="relative h-48 flex items-end justify-between gap-2 px-2">
+<!-- SVG Curve Overlay -->
+<svg class="absolute inset-0 h-full w-full" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0,80 Q15,40 30,60 T60,20 T100,10" fill="none" stroke="#a83836" stroke-width="2"></path>
+<path d="M0,80 Q15,40 30,60 T60,20 T100,10 L100,100 L0,100 Z" fill="url(#gradient-fatigue)" opacity="0.1"></path>
+<defs>
+<lineargradient id="gradient-fatigue" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#a83836;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#a83836;stop-opacity:0"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Grid lines -->
+<div class="absolute bottom-0 w-full h-[1px] bg-outline-variant/10"></div>
+<div class="absolute bottom-1/4 w-full h-[1px] bg-outline-variant/10"></div>
+<div class="absolute bottom-2/4 w-full h-[1px] bg-outline-variant/10"></div>
+<div class="absolute bottom-3/4 w-full h-[1px] bg-outline-variant/10"></div>
+<!-- Bar placeholders for structure -->
+<div class="w-full flex justify-between px-4 text-[10px] text-slate-400 absolute -bottom-6 font-bold">
+<span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+</div>
+</div>
+</div>
+<div class="mt-12 p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary" data-weight="fill">lightbulb</span>
+<p class="text-sm font-medium text-on-primary-container">AI Recommendation: Reduce meetings by 40% for the next 48 hours to clear Ishaan's recovery debt.</p>
+</div>
+<button class="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:shadow-lg transition-all">Apply Adjustment</button>
+</div>
+</div>
+<!-- AI Task Reallocation Suggestions -->
+<div class="glass-card p-8 rounded-2xl">
+<h3 class="text-lg font-bold font-headline mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary">auto_awesome</span>
+                        AI Task Optimizer
+                    </h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-white/50 rounded-xl hover:bg-white/80 transition-all group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">swap_horiz</span>
+</div>
+<div>
+<p class="text-sm font-bold">Move "System Refactor" from <span class="text-error">Ishaan</span> to <span class="text-primary-fixed-dim">Sarah</span></p>
+<p class="text-xs text-on-surface-variant">Sarah has 4h of focus availability this afternoon.</p>
+</div>
+</div>
+<button class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined">check_circle</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-4 bg-white/50 rounded-xl hover:bg-white/80 transition-all group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">auto_delete</span>
+</div>
+<div>
+<p class="text-sm font-bold">Postpone "Quarterly Review Prep" to next Tuesday</p>
+<p class="text-xs text-on-surface-variant">Low urgency task impacting current core sprint delivery.</p>
+</div>
+</div>
+<button class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined">check_circle</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column Sidebar Widgets -->
+<div class="col-span-12 lg:col-span-4 space-y-8">
+<!-- Burnout Risk Queue -->
+<div class="glass-panel p-6 rounded-2xl">
+<h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6">Burnout Risk Queue</h3>
+<div class="space-y-6">
+<div class="flex items-center gap-4">
+<img alt="Sarah J." class="w-12 h-12 rounded-xl object-cover" data-alt="Portrait of a professional woman with a friendly expression in a modern airy office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeKvLxA7IUFRLlQNALI-9g9XRqV8UZU79244QMcdSqzeY03HH3pF_uYf5PnjA2B3W_R7Z2CUQInEystqWWJOuVHoRHQEhL2hPrje5xOTbFkBb34k-enWaZu0Plw2hb6ZmE4eo_HLYdFTqdla5aHgPr4zrw4-gEvPs3q2xIZQEyOC_QNQLOlMr85yKKnDQWLe4g6DR0Pw2po_Fh1UPvGby3H6tQaXUhcOtuBtH6H_1tNrGNhwgcOtQ38vebqKdcqBnY5P4JKDaM46Wb"/>
+<div class="flex-1">
+<p class="text-sm font-bold">Sarah Jenkins</p>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-1">
+<div class="bg-error-container w-[88%] h-full rounded-full"></div>
+</div>
+</div>
+<span class="text-xs font-bold text-error">88%</span>
+</div>
+<div class="flex items-center gap-4">
+<img alt="Alex M." class="w-12 h-12 rounded-xl object-cover" data-alt="Close-up portrait of a young man smiling in a natural, bright daylight setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwgog8uPbL5-kSMyqMPUYPn-GTgvgJ0xZ6Wa7eRdT3GQCji7pBi0L1Uh4_jKVAObhPCXAlV48X3vfT610D3v4aDVrLxLjEDuirU5WZtQpOUaXMctzqfIukp1ehoQhSV5PmLKqFTDd_CYyq9O3TVU3uT8p4BtsO5ZFC5mKrSn2SzvhshM-IMK10o20PhxOj2OEu8OFP2VpiIShpYlRrfWkR1DHRIH8rf8qlsgPSBm0WvsNwnIAsg_RmDhmhTr-IoxMuWgSJhgXwZbPZ"/>
+<div class="flex-1">
+<p class="text-sm font-bold">Alex Martinez</p>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-1">
+<div class="bg-tertiary w-[72%] h-full rounded-full"></div>
+</div>
+</div>
+<span class="text-xs font-bold text-tertiary">72%</span>
+</div>
+<div class="flex items-center gap-4 opacity-60">
+<img alt="Elena R." class="w-12 h-12 rounded-xl object-cover" data-alt="Modern professional woman with glasses in a soft-lit creative workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeQrGQSXe4xK7fOs6sNRjPJhoR0g_EjS1pwcyL8aiSvP3yyZkdyK0akd0Xj9jvDeTvoZhHyhmOHfjaQqTzB2SXYvBVoQKac6MlOGnqd2iSJqXsV5fcDC2_Gft8fYCmhEdbmC2lm-dDXHGnpJ_t3zPBkT_XFw8Mq7Q6HoKLfqJr65k5jKgTMhT3ZL9LjIUrC1Mp8iynSBKUbxupDjnCN3FGuhNrVYfMTte4MS6D9c7goODAwwzliHh2NoVsquzjwpqsO1-sKgQOkDeY"/>
+<div class="flex-1">
+<p class="text-sm font-bold">Elena Rodriguez</p>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-1">
+<div class="bg-primary w-[45%] h-full rounded-full"></div>
+</div>
+</div>
+<span class="text-xs font-bold text-primary">45%</span>
+</div>
+</div>
+<button class="w-full mt-8 py-3 text-sm font-bold text-primary bg-white/60 rounded-xl border border-white/20 hover:bg-white transition-all">View All Risk Logs</button>
+</div>
+<!-- Team Distribution Map -->
+<div class="glass-card p-6 rounded-2xl overflow-hidden relative min-h-[300px] flex flex-col">
+<h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Team Distribution</h3>
+<div class="flex-1 rounded-xl bg-slate-200/20 overflow-hidden relative">
+<!-- Abstract Map Representation -->
+<div class="absolute inset-0 opacity-40 bg-[url('https://www.transparenttextures.com/patterns/world-map.png')] bg-center bg-no-repeat"></div>
+<!-- Pulse Dots representing team locations -->
+<div class="absolute top-[30%] left-[20%]">
+<span class="flex h-3 w-3 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+</span>
+<div class="absolute top-4 -left-6 px-2 py-1 bg-white rounded-lg shadow-sm text-[10px] font-bold whitespace-nowrap">SF (4 Eng)</div>
+</div>
+<div class="absolute top-[50%] left-[70%]">
+<span class="flex h-3 w-3 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-tertiary"></span>
+</span>
+<div class="absolute top-4 -left-6 px-2 py-1 bg-white rounded-lg shadow-sm text-[10px] font-bold whitespace-nowrap">LDN (2 Des)</div>
+</div>
+</div>
+<div class="mt-4 flex gap-4 text-[10px] font-bold uppercase tracking-tighter text-slate-500">
+<div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-primary"></div> North America</div>
+<div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-tertiary"></div> Europe</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for quick action -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-primary to-primary-container text-white rounded-2xl shadow-[0_20px_50px_rgba(48,94,169,0.3)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined">add</span>
+</button>
+</body></html>

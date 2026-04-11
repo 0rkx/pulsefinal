@@ -290,13 +290,35 @@ def get_suggestions(manager_id: str = None):
     # Get latest recommendations per employee
     latest_recs = recs_df.sort_values("date").groupby("employee_id").last().reset_index()
 
-    # We need to map recommendations to tasks.
     # The frontend expects: { id, task, from, to, reason, benefits, status, managerId }
     emps = get_employees_data()
     emp_map = {e["id"]: e for e in emps}
 
     suggestions = []
     sid = 1
+
+    # ── Balanced allocation tracker ──
+    # Tracks how many tasks have been assigned to each employee across all
+    # suggestions so that work is spread evenly instead of piling on one person.
+    assignment_count: dict = {}  # employee_id -> int
+
+    def pick_balanced_peer(mgr_id: str, exclude_id: str) -> str:
+        """Pick the healthy peer with the fewest current assignments.
+        Ties are broken by lowest burnout so the healthiest person is preferred
+        when assignment counts are equal."""
+        peers = [
+            e for e in emps
+            if e["managerId"] == mgr_id
+            and e["status"] == "healthy"
+            and e["id"] != exclude_id
+        ]
+        if not peers:
+            return "Available Peer"
+        # Sort by (assignments so far, burnout %) so we round-robin across peers
+        peers.sort(key=lambda e: (assignment_count.get(e["id"], 0), e.get("burnout", 100)))
+        chosen = peers[0]
+        assignment_count[chosen["id"]] = assignment_count.get(chosen["id"], 0) + 1
+        return chosen["name"]
 
     for _, row in latest_recs.iterrows():
         eid = row["employee_id"]
@@ -309,16 +331,11 @@ def get_suggestions(manager_id: str = None):
 
         recs_str = str(row.get("recommendations", ""))
         if "High burnout risk" in recs_str or "Critical" in recs_str or "critical" in recs_str:
-            # Create a reallocation suggestion
-            task_name = "Workload Reallocation"
-            # Find a healthy employee under the same manager
-            healthy_peers = [e for e in emps if e["managerId"] == emp["managerId"] and e["status"] == "healthy" and e["id"] != eid]
-            healthy_peers.sort(key=lambda e: (e.get("burnoutIndex", 10), e.get("fragmentationScore", 50)))
-            to_name = healthy_peers[0]["name"] if healthy_peers else "Available Peer"
+            to_name = pick_balanced_peer(emp["managerId"], eid)
 
             suggestions.append({
                 "id": sid,
-                "task": task_name,
+                "task": "Workload Reallocation",
                 "from": emp["name"],
                 "to": to_name,
                 "reason": f"{emp['name']} is showing high burnout markers.",
@@ -329,11 +346,12 @@ def get_suggestions(manager_id: str = None):
             sid += 1
 
         if "High interruptions" in recs_str or "fragmentation" in recs_str.lower():
+            to_peer = pick_balanced_peer(emp["managerId"], eid)
             suggestions.append({
                 "id": sid,
                 "task": "Schedule Focus Blocks",
                 "from": emp["name"],
-                "to": "Calendar/System",
+                "to": to_peer,
                 "reason": "High fragmentation detected.",
                 "benefits": ["Restores deep work", "Improves output"],
                 "status": "pending",
@@ -342,11 +360,12 @@ def get_suggestions(manager_id: str = None):
             sid += 1
 
         if "After-hours" in recs_str or "weekend commits" in recs_str.lower():
+            to_peer = pick_balanced_peer(emp["managerId"], eid)
             suggestions.append({
                 "id": sid,
                 "task": "Enforce Work-Life Boundary",
                 "from": emp["name"],
-                "to": "Team Lead",
+                "to": to_peer,
                 "reason": "After-hours/weekend work detected via Git and Slack.",
                 "benefits": ["Prevents chronic fatigue", "Improves recovery"],
                 "status": "pending",
@@ -355,11 +374,12 @@ def get_suggestions(manager_id: str = None):
             sid += 1
 
         if "Zoom" in recs_str or "speaking" in recs_str.lower():
+            to_peer = pick_balanced_peer(emp["managerId"], eid)
             suggestions.append({
                 "id": sid,
                 "task": "Reduce Zoom Load",
                 "from": emp["name"],
-                "to": "Calendar/System",
+                "to": to_peer,
                 "reason": "Excessive Zoom meetings or disengagement detected.",
                 "benefits": ["Reduces meeting fatigue", "Improves focus time"],
                 "status": "pending",

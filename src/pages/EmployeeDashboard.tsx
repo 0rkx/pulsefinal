@@ -1,64 +1,354 @@
-import React, { useEffect, useState } from 'react';
-import { Brain, Flame, Timer, Target, Briefcase, Clock, Activity, Coffee, Check, User, Zap, LineChart as LineChartIcon, AlertTriangle, TrendingUp, TrendingDown, Minus, Shield, Sparkles, Waves, Link2, BatteryCharging } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { TrendingUp, TrendingDown, Minus, AlertTriangle, Shield, Zap, Sparkles } from 'lucide-react';
 import { AppUser, EmployeeStat, EmployeeHistory, Anomaly, Forecast, Narrative } from '../types';
 import { fetchEmployees, fetchEmployeeHistory, fetchAnomalies, fetchForecast, fetchNarratives } from '../api';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+} from 'recharts';
 
-// --- Helper: Trend arrow icon ---
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function TrendIcon({ direction }: { direction: string }) {
-    if (direction === 'rising') return <TrendingUp className="w-4 h-4 text-rose-400" />;
-    if (direction === 'falling') return <TrendingDown className="w-4 h-4 text-emerald-400" />;
-    return <Minus className="w-4 h-4 text-zinc-400" />;
+    if (direction === 'rising') return <TrendingUp className="w-4 h-4 text-error" />;
+    if (direction === 'falling') return <TrendingDown className="w-4 h-4 text-primary" />;
+    return <Minus className="w-4 h-4 text-on-surface-variant" />;
 }
+function trendLabel(d: string) { return d === 'rising' ? 'Rising' : d === 'falling' ? 'Falling' : 'Stable'; }
+function trendColor(d: string) { return d === 'rising' ? 'text-error' : d === 'falling' ? 'text-primary' : 'text-on-surface-variant'; }
 
-function trendLabel(d: string) {
-    if (d === 'rising') return 'Rising';
-    if (d === 'falling') return 'Falling';
-    return 'Stable';
-}
-
-function trendColor(d: string) {
-    if (d === 'rising') return 'text-rose-400';
-    if (d === 'falling') return 'text-emerald-400';
-    return 'text-zinc-400';
-}
-
-// --- Helper: Risk tier badge ---
 function RiskBadge({ tier }: { tier: string | null }) {
     if (!tier) return null;
-    const colors: Record<string, string> = {
-        CRITICAL: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-        HIGH: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-        MEDIUM: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-        LOW: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-        MINIMAL: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
+    const styles: Record<string, string> = {
+        CRITICAL: 'bg-red-100 text-red-700 border border-red-200',
+        HIGH: 'bg-orange-100 text-orange-700 border border-orange-200',
+        MEDIUM: 'bg-amber-100 text-amber-700 border border-amber-200',
+        LOW: 'bg-sky-100 text-sky-700 border border-sky-200',
+        MINIMAL: 'bg-green-100 text-green-700 border border-green-200',
     };
-    const cls = colors[tier] || 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30';
-    return <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>{tier}</span>;
+    const cls = styles[tier] || 'bg-surface-container text-on-surface-variant border border-outline-variant/30';
+    return <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${cls}`}>{tier}</span>;
 }
 
-// --- Sub-score gauge bar ---
-function GaugeBar({ label, value, max, icon, color, unit }: { label: string; value: number; max: number; icon: React.ReactNode; color: string; unit?: string }) {
+// ─── Creative: Burnout Dial — SVG arc gauge ──────────────────────────────────
+function BurnoutDial({ value, max = 10 }: { value: number; max?: number }) {
+    const pct = Math.min(1, value / max);
+    const radius = 70;
+    const cx = 100; const cy = 100;
+    const startAngle = -210;
+    const endAngle = 30;
+    const totalAngle = endAngle - startAngle;
+    const arcAngle = startAngle + totalAngle * pct;
+
+    function polarToXY(angleDeg: number, r: number) {
+        const a = (angleDeg * Math.PI) / 180;
+        return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+    }
+
+    function describeArc(fromAngle: number, toAngle: number, r: number) {
+        const s = polarToXY(fromAngle, r);
+        const e = polarToXY(toAngle, r);
+        const large = toAngle - fromAngle > 180 ? 1 : 0;
+        return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
+    }
+
+    const needleTip = polarToXY(arcAngle, radius - 8);
+    const needleBase1 = polarToXY(arcAngle + 90, 8);
+    const needleBase2 = polarToXY(arcAngle - 90, 8);
+
+    const dialColor = pct > 0.7 ? '#a83836' : pct > 0.4 ? '#d97706' : '#305ea9';
+    const dialLabel = pct > 0.7 ? 'Critical' : pct > 0.4 ? 'Elevated' : 'Healthy';
+
+    // tick marks
+    const ticks = Array.from({ length: 11 }, (_, i) => {
+        const angle = startAngle + (totalAngle * i) / 10;
+        const inner = polarToXY(angle, radius - 12);
+        const outer = polarToXY(angle, radius);
+        return { inner, outer, i };
+    });
+
+    return (
+        <div className="flex flex-col items-center">
+            <svg viewBox="0 0 200 160" className="w-full max-w-[220px]">
+                {/* Track */}
+                <path
+                    d={describeArc(startAngle, endAngle, radius)}
+                    fill="none"
+                    stroke="rgba(172,178,189,0.25)"
+                    strokeWidth={14}
+                    strokeLinecap="round"
+                />
+                {/* Colored arc */}
+                <path
+                    d={describeArc(startAngle, arcAngle, radius)}
+                    fill="none"
+                    stroke={dialColor}
+                    strokeWidth={14}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 1s ease, stroke 0.5s' }}
+                />
+                {/* Glow under arc */}
+                <path
+                    d={describeArc(startAngle, arcAngle, radius)}
+                    fill="none"
+                    stroke={dialColor}
+                    strokeWidth={22}
+                    strokeLinecap="round"
+                    opacity={0.12}
+                />
+                {/* Tick marks */}
+                {ticks.map(({ inner, outer, i }) => (
+                    <line
+                        key={i}
+                        x1={inner.x} y1={inner.y}
+                        x2={outer.x} y2={outer.y}
+                        stroke="rgba(172,178,189,0.4)"
+                        strokeWidth={i === 0 || i === 5 || i === 10 ? 2 : 1}
+                    />
+                ))}
+                {/* Needle */}
+                <polygon
+                    points={`${needleTip.x},${needleTip.y} ${needleBase1.x},${needleBase1.y} ${needleBase2.x},${needleBase2.y}`}
+                    fill={dialColor}
+                    opacity={0.85}
+                />
+                {/* Center circle */}
+                <circle cx={cx} cy={cy} r={8} fill="white" stroke={dialColor} strokeWidth={2} />
+                {/* Value text */}
+                <text x={cx} y={cy - 18} textAnchor="middle" fontSize={28} fontWeight={800} fontFamily="Manrope, sans-serif" fill={dialColor}>
+                    {value.toFixed(1)}
+                </text>
+                <text x={cx} y={cy - 4} textAnchor="middle" fontSize={10} fill="#595f69" fontFamily="Inter, sans-serif">
+                    / {max}
+                </text>
+                {/* Status label */}
+                <text x={cx} y={cy + 24} textAnchor="middle" fontSize={11} fontWeight={700} fontFamily="Inter, sans-serif" fill={dialColor} letterSpacing="0.08em">
+                    {dialLabel.toUpperCase()}
+                </text>
+            </svg>
+        </div>
+    );
+}
+
+// ─── Creative: Signal Heatmap bar ────────────────────────────────────────────
+function SignalBar({ label, value, max, color, icon }: { label: string; value: number; max: number; color: string; icon: string }) {
     const pct = Math.min(100, (value / max) * 100);
     return (
-        <div className="bg-zinc-950/50 p-4 rounded-xl border border-zinc-800">
-            <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider mb-2">
-                {icon} {label}
-            </div>
-            <div className="flex items-baseline gap-1.5 mb-2">
-                <span className={`text-xl font-bold ${color}`}>{typeof value === 'number' ? value.toFixed(1) : value}</span>
-                {unit && <span className="text-zinc-500 text-xs">{unit}</span>}
-            </div>
-            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full transition-all duration-700`} style={{ width: `${pct}%`, background: `var(--gauge-${color.replace('text-', '')}, currentColor)` }}>
-                    <div className={`h-full rounded-full ${color.replace('text-', 'bg-')}`} style={{ width: '100%' }}></div>
+        <div className="flex items-center gap-4">
+            <div className="w-36 shrink-0">
+                <div className="flex items-center gap-2 mb-1">
+                    <span className={`material-symbols-outlined text-[15px] ${color}`}>{icon}</span>
+                    <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">{label}</span>
                 </div>
+            </div>
+            <div className="flex-1 h-2 bg-surface-container rounded-full overflow-hidden">
+                <div
+                    className={`h-full rounded-full transition-all duration-700`}
+                    style={{
+                        width: `${pct}%`,
+                        background: color.includes('error') ? '#a83836' :
+                            color.includes('amber') ? '#d97706' :
+                                color.includes('primary') ? '#305ea9' :
+                                    color.includes('tertiary') ? '#625983' : '#305ea9',
+                    }}
+                />
+            </div>
+            <span className={`text-sm font-bold w-12 text-right ${color}`}>
+                {typeof value === 'number' ? value.toFixed(1) : value}
+            </span>
+        </div>
+    );
+}
+
+// ─── Creative: Anomaly Timeline ───────────────────────────────────────────────
+function AnomalyTimeline({ anomalies }: { anomalies: Anomaly[] }) {
+    const last5 = anomalies.slice(-5).reverse();
+    return (
+        <div className="relative pl-6">
+            {/* Vertical line */}
+            <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-surface-container-high rounded-full" />
+            <div className="space-y-4">
+                {last5.map((a, i) => {
+                    const severity = a.isolationScore > 0.7 ? 'error' : a.isolationScore > 0.4 ? 'amber' : 'yellow';
+                    const dotColor = severity === 'error' ? 'bg-error' : severity === 'amber' ? 'bg-amber-500' : 'bg-yellow-400';
+                    return (
+                        <div key={i} className="relative flex items-start gap-3">
+                            {/* Dot on timeline */}
+                            <div className={`absolute -left-[18px] top-1.5 w-2.5 h-2.5 rounded-full ${dotColor} ring-2 ring-white`} />
+                            <div className="flex-1 bg-white/50 p-3 rounded-xl border border-white/30">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="font-mono text-xs text-on-surface-variant">{a.date}</span>
+                                    <div className="flex gap-3 text-[10px] text-on-surface-variant">
+                                        <span>ISO: <strong>{a.isolationScore.toFixed(2)}</strong></span>
+                                        <span>Z: <strong>{a.zScoreMax.toFixed(2)}</strong></span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-on-surface font-medium truncate">{a.triggerFeature || 'Behavioral pattern shift detected'}</p>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
 }
 
+// ─── Creative: Forecast Horizon visualization ─────────────────────────────────
+function ForecastHorizon({ forecast }: { forecast: Forecast }) {
+    const zones = [
+        { label: 'Now', prob: forecast.currentProb, days: 0 },
+        { label: '7 Day', prob: forecast.forecast7dAvg, days: 7 },
+        { label: '14 Day', prob: forecast.forecast14dAvg, days: 14 },
+    ];
+    const maxProb = Math.max(...zones.map(z => z.prob), 0.01);
 
+    return (
+        <div>
+            <div className="flex items-end gap-3 h-32">
+                {zones.map((z, i) => {
+                    const pct = (z.prob / Math.max(maxProb * 1.1, 0.1)) * 100;
+                    const color = z.prob > 0.7 ? '#a83836' : z.prob > 0.4 ? '#d97706' : '#305ea9';
+                    return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                            <span className="text-xs font-bold" style={{ color }}>{(z.prob * 100).toFixed(1)}%</span>
+                            <div className="w-full flex items-end" style={{ height: '80px' }}>
+                                <div
+                                    className="w-full rounded-t-xl transition-all duration-700"
+                                    style={{
+                                        height: `${pct}%`,
+                                        background: `linear-gradient(to top, ${color}cc, ${color}40)`,
+                                        minHeight: '4px',
+                                    }}
+                                />
+                            </div>
+                            <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">{z.label}</span>
+                        </div>
+                    );
+                })}
+            </div>
+            {/* Trend indicator */}
+            <div className="mt-4 flex items-center gap-3 text-sm">
+                <TrendIcon direction={forecast.trendDirection} />
+                <span className={`font-medium ${trendColor(forecast.trendDirection)}`}>{trendLabel(forecast.trendDirection)} trend</span>
+                <span className="text-on-surface-variant text-xs">· {forecast.numChangepoints} changepoints · vol: {forecast.avgVolatility.toFixed(3)}</span>
+            </div>
+        </div>
+    );
+}
+
+// ─── Creative: Wellness Orbit — animated SVG rings ────────────────────────────
+function WellnessOrbit({ stats }: { stats: EmployeeStat }) {
+    const metrics = [
+        { label: 'Deep Work', value: stats.deepWorkIndex / 100, color: '#305ea9', r: 44 },
+        { label: 'Connection', value: (stats.connectionIndex ?? 50) / 100, color: '#625983', r: 33 },
+        { label: 'Recovery', value: Math.max(0, 1 - (stats.recoveryDebt ?? 0) / 10), color: '#546071', r: 22 },
+    ];
+
+    return (
+        <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+                <svg viewBox="0 0 120 120" className="w-36 h-36">
+                    {/* Orbit rings */}
+                    {metrics.map(({ r, color, value }, i) => {
+                        const circ = 2 * Math.PI * r;
+                        const dash = circ * value;
+                        const gap = circ - dash;
+                        return (
+                            <g key={i}>
+                                {/* Track */}
+                                <circle cx={60} cy={60} r={r} fill="none" stroke="rgba(172,178,189,0.15)" strokeWidth={7} />
+                                {/* Progress */}
+                                <circle
+                                    cx={60} cy={60} r={r}
+                                    fill="none"
+                                    stroke={color}
+                                    strokeWidth={7}
+                                    strokeLinecap="round"
+                                    strokeDasharray={`${dash} ${gap}`}
+                                    strokeDashoffset={circ * 0.25}
+                                    style={{ transition: 'stroke-dasharray 1s ease' }}
+                                    transform={`rotate(-90 60 60)`}
+                                />
+                            </g>
+                        );
+                    })}
+                    {/* Center */}
+                    <text x={60} y={56} textAnchor="middle" fontSize={12} fontWeight={800} fontFamily="Manrope" fill="#2d333b">
+                        {stats.productivity}%
+                    </text>
+                    <text x={60} y={68} textAnchor="middle" fontSize={7.5} fontFamily="Inter" fill="#595f69" letterSpacing="0.06em">
+                        PRODUCTIVITY
+                    </text>
+                </svg>
+            </div>
+            {/* Legend */}
+            <div className="flex flex-col gap-1.5 w-full">
+                {metrics.map(({ label, value, color }) => (
+                    <div key={label} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                            <span className="text-on-surface-variant font-medium">{label}</span>
+                        </div>
+                        <span className="font-bold text-on-surface">{(value * 100).toFixed(0)}%</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── Creative: Daily Schedule Strip ─────────────────────────────────────────
+function DailyScheduleStrip({ stats }: { stats: EmployeeStat }) {
+    const deepWork = Math.max(1, Math.round((stats.deepWorkIndex / 100) * 8));
+    const meetings = Math.min(4, Math.round((stats.fragmentationScore ?? 30) / 25));
+    const recovery = 1;
+    const admin = 8 - deepWork - meetings - recovery;
+
+    const blocks = [
+        ...Array(deepWork).fill({ type: 'deep', label: 'Deep Work', color: 'bg-primary/80', icon: 'center_focus_strong' }),
+        ...Array(Math.max(0, meetings)).fill({ type: 'meeting', label: 'Meetings', color: 'bg-tertiary/70', icon: 'groups' }),
+        ...Array(Math.max(0, admin)).fill({ type: 'admin', label: 'Admin', color: 'bg-secondary-fixed-dim/80', icon: 'inbox' }),
+        ...Array(recovery).fill({ type: 'break', label: 'Recovery', color: 'bg-surface-container-high', icon: 'self_improvement' }),
+    ];
+
+    const hours = ['9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm'];
+
+    return (
+        <div>
+            <div className="flex gap-1 mb-2">
+                {blocks.slice(0, 8).map((b, i) => (
+                    <div
+                        key={i}
+                        title={b.label}
+                        className={`flex-1 h-8 rounded-lg ${b.color} flex items-center justify-center cursor-default transition-all hover:scale-105`}
+                    >
+                        <span className="material-symbols-outlined text-white/80 text-[14px]">{b.icon}</span>
+                    </div>
+                ))}
+            </div>
+            <div className="flex gap-1">
+                {hours.map((h, i) => (
+                    <div key={i} className="flex-1 text-center text-[9px] text-on-surface-variant font-medium">{h}</div>
+                ))}
+            </div>
+            <div className="flex gap-4 mt-3 flex-wrap">
+                {[
+                    { label: 'Deep Work', color: 'bg-primary/80' },
+                    { label: 'Meetings', color: 'bg-tertiary/70' },
+                    { label: 'Admin', color: 'bg-secondary-fixed-dim/80' },
+                    { label: 'Recovery', color: 'bg-surface-container-high' },
+                ].map(({ label, color }) => (
+                    <div key={label} className="flex items-center gap-1.5 text-[10px] text-on-surface-variant">
+                        <div className={`w-2 h-2 rounded ${color}`} />
+                        {label}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─── Main Employee Dashboard ──────────────────────────────────────────────────
 export default function EmployeeDashboard({ user }: { user: AppUser }) {
     const [empStats, setEmpStats] = useState<EmployeeStat | null>(null);
     const [history, setHistory] = useState<EmployeeHistory[]>([]);
@@ -81,21 +371,18 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
                     fetchForecast(me.id),
                     fetchNarratives(),
                 ]);
-
                 setHistory(hist.length > 0 ? hist : [
-                    { date: 'Mon', burnoutIndex: 2.0, deepWorkIndex: 80, fragmentationScore: 3, connectionIndex: 60, recoveryDebt: 1 },
-                    { date: 'Tue', burnoutIndex: 2.5, deepWorkIndex: 75, fragmentationScore: 4, connectionIndex: 55, recoveryDebt: 1.5 },
-                    { date: 'Wed', burnoutIndex: 3.5, deepWorkIndex: 60, fragmentationScore: 6, connectionIndex: 50, recoveryDebt: 2 },
-                    { date: 'Thu', burnoutIndex: 3.2, deepWorkIndex: 70, fragmentationScore: 5, connectionIndex: 52, recoveryDebt: 1.8 },
-                    { date: 'Fri', burnoutIndex: 4.1, deepWorkIndex: 50, fragmentationScore: 7, connectionIndex: 45, recoveryDebt: 3 },
+                    { date: 'Mon', burnoutIndex: 2.0, deepWorkIndex: 80, fragmentationScore: 30, connectionIndex: 60, recoveryDebt: 1 },
+                    { date: 'Tue', burnoutIndex: 2.5, deepWorkIndex: 75, fragmentationScore: 40, connectionIndex: 55, recoveryDebt: 1.5 },
+                    { date: 'Wed', burnoutIndex: 3.5, deepWorkIndex: 60, fragmentationScore: 60, connectionIndex: 50, recoveryDebt: 2 },
+                    { date: 'Thu', burnoutIndex: 3.2, deepWorkIndex: 70, fragmentationScore: 50, connectionIndex: 52, recoveryDebt: 1.8 },
+                    { date: 'Fri', burnoutIndex: 4.1, deepWorkIndex: 50, fragmentationScore: 70, connectionIndex: 45, recoveryDebt: 3 },
                 ]);
                 setAnomalies(anom);
                 setForecast(fc);
-
                 const myNarr = narrs.find(n => n.employeeId.toLowerCase() === me.id.toLowerCase());
                 setNarrative(myNarr || null);
             }
-
             setLoading(false);
         }
         loadData();
@@ -103,126 +390,116 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
 
     if (loading || !empStats) {
         return (
-            <div className="flex justify-center items-center h-64 text-zinc-500">
-                <div className="w-8 h-8 border-4 border-zinc-800 border-t-emerald-500 rounded-full animate-spin"></div>
-                <span className="ml-3">Loading Workload Analysis...</span>
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <div className="w-10 h-10 rounded-full border-4 border-surface-container border-t-primary animate-spin" />
+                <p className="text-on-surface-variant text-sm font-medium">Loading Workload Analysis...</p>
             </div>
         );
     }
 
-    // Radar chart data for sub-scores
+    const factorTags = empStats.drivingFactors
+        ? empStats.drivingFactors.split(/[;,]/).map(f => f.trim()).filter(Boolean)
+        : [];
+
     const radarData = [
         { subject: 'Deep Work', value: empStats.deepWorkIndex ?? 50, fullMark: 100 },
         { subject: 'Connection', value: empStats.connectionIndex ?? 50, fullMark: 100 },
         { subject: 'Recovery', value: Math.max(0, 100 - (empStats.recoveryDebt ?? 0) * 10), fullMark: 100 },
         { subject: 'Focus', value: Math.max(0, 100 - (empStats.fragmentationScore ?? 50)), fullMark: 100 },
+        { subject: 'Productivity', value: empStats.productivity ?? 70, fullMark: 100 },
     ];
 
-    // Parse driving factors into tags
-    const factorTags = empStats.drivingFactors
-        ? empStats.drivingFactors.split(/[;,]/).map(f => f.trim()).filter(Boolean)
-        : [];
-
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-8 animate-fade-slide-up">
 
-            <div className="mb-6">
-                <div className="flex items-center gap-4 flex-wrap">
-                    <h2 className="text-2xl font-bold text-white">Your Dashboard, {user.name}</h2>
-                    <RiskBadge tier={empStats.riskTier} />
+            {/* ── Greeting Header ── */}
+            <div className="glass-card p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start gap-4">
+                <div>
+                    <p className="text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-1">Your Wellness Dashboard</p>
+                    <h2 className="text-3xl font-extrabold font-headline text-on-surface">{user.name}</h2>
+                    <p className="text-on-surface-variant mt-1 text-sm">Real-time workload intelligence · Multi-model ML analysis</p>
                 </div>
-                <p className="text-zinc-400 mt-1">Real-time workload intelligence powered by multi-model ML analysis.</p>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <RiskBadge tier={empStats.riskTier} />
+                    {empStats.ensembleProb != null && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-tertiary-container/40 text-on-tertiary-container text-xs font-bold">
+                            <Shield className="w-3 h-3" />
+                            Ensemble: {(empStats.ensembleProb * 100).toFixed(1)}%
+                            {empStats.ensembleConfidence != null && (
+                                <span className="opacity-70 ml-1">({(empStats.ensembleConfidence * 100).toFixed(0)}% conf)</span>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Anomaly Alert Banner */}
+            {/* ── Anomaly Alert Banner ── */}
             {anomalies.length > 0 && (
-                <div className="bg-amber-950/40 border border-amber-800/50 p-4 rounded-xl flex items-start gap-3 shadow-lg shadow-amber-900/10">
+                <div className="glass-card p-4 rounded-2xl flex items-start gap-4 border-l-4 border-amber-500">
                     <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
                     <div>
-                        <h3 className="text-amber-400 font-semibold text-sm">Anomaly Detected — {anomalies.length} unusual pattern{anomalies.length > 1 ? 's' : ''} found</h3>
-                        <p className="text-sm text-amber-300/80 mt-1">
+                        <h3 className="text-sm font-bold text-on-surface">Anomaly Detected — {anomalies.length} unusual pattern{anomalies.length > 1 ? 's' : ''} found</h3>
+                        <p className="text-sm text-on-surface-variant mt-0.5">
                             Latest on <span className="font-mono">{anomalies[anomalies.length - 1].date}</span>
                             {anomalies[anomalies.length - 1].triggerFeature && (
-                                <> — triggered by <span className="font-semibold">{anomalies[anomalies.length - 1].triggerFeature}</span></>
+                                <> — triggered by <span className="font-semibold text-amber-600">{anomalies[anomalies.length - 1].triggerFeature}</span></>
                             )}
-                            {" "}(isolation score: {anomalies[anomalies.length - 1].isolationScore.toFixed(2)}, z-score: {anomalies[anomalies.length - 1].zScoreMax.toFixed(2)})
                         </p>
                     </div>
                 </div>
             )}
 
-            {/* Top Metrics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2"><Flame className="w-4 h-4" /> Burnout Index</div>
-                    <div className="flex items-baseline gap-2">
-                        <span className={`text-4xl font-bold ${empStats.status === 'critical' ? 'text-rose-400' : empStats.status === 'warning' ? 'text-amber-400' : 'text-white'}`}>{empStats.burnoutIndex}</span>
-                        <span className="text-zinc-500 font-medium">/ 10</span>
-                    </div>
-                    {empStats.ensembleProb !== null && empStats.ensembleProb !== undefined && (
-                        <div className="mt-2 flex items-center gap-2">
-                            <Shield className="w-3.5 h-3.5 text-violet-400" />
-                            <span className="text-xs text-zinc-400">Ensemble: <span className="text-violet-400 font-semibold">{(empStats.ensembleProb * 100).toFixed(1)}%</span></span>
-                            {empStats.ensembleConfidence !== null && (
-                                <span className="text-xs text-zinc-500 ml-1">({(empStats.ensembleConfidence * 100).toFixed(0)}% conf)</span>
-                            )}
-                        </div>
-                    )}
+            {/* ── Hero Row: Burnout Dial + Wellness Orbit + Signals ── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* Burnout Dial */}
+                <div className="glass-card p-6 rounded-2xl flex flex-col items-center gap-2">
+                    <h3 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest self-start">Burnout Index</h3>
+                    <BurnoutDial value={empStats.burnoutIndex} max={10} />
+                    <p className="text-xs text-on-surface-variant text-center max-w-[180px]">
+                        Predicted: <span className={`font-bold ${empStats.status === 'critical' ? 'text-error' : empStats.status === 'warning' ? 'text-amber-600' : 'text-primary'}`}>{empStats.predictedBurnout}</span>
+                    </p>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2"><Timer className="w-4 h-4" /> Est. Time to Burnout</div>
-                    <div className={`text-4xl font-bold ${empStats.status === 'critical' ? 'text-rose-400' : empStats.status === 'warning' ? 'text-amber-400' : 'text-emerald-400'}`}>{empStats.predictedBurnout}</div>
-                    {forecast && (
-                        <div className="mt-2 flex items-center gap-2">
-                            <TrendIcon direction={forecast.trendDirection} />
-                            <span className={`text-xs font-medium ${trendColor(forecast.trendDirection)}`}>{trendLabel(forecast.trendDirection)} trend</span>
-                        </div>
-                    )}
+
+                {/* Wellness Orbit */}
+                <div className="glass-card p-6 rounded-2xl flex flex-col gap-2">
+                    <h3 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Wellness Rings</h3>
+                    <WellnessOrbit stats={empStats} />
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2"><Target className="w-4 h-4" /> Deep Work Index</div>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-bold text-blue-400">{empStats.deepWorkIndex}</span>
-                        <span className="text-zinc-500 font-medium">/ 100</span>
-                    </div>
-                </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2"><Waves className="w-4 h-4" /> Fragmentation</div>
-                    <div className="flex items-baseline gap-2">
-                        <span className={`text-4xl font-bold ${(empStats.fragmentationScore ?? 0) > 70 ? 'text-rose-400' : (empStats.fragmentationScore ?? 0) > 50 ? 'text-amber-400' : 'text-emerald-400'}`}>{empStats.fragmentationScore?.toFixed(1) ?? '—'}</span>
-                        <span className="text-zinc-500 font-medium">/ 100</span>
+
+                {/* Signal Bars */}
+                <div className="glass-card p-6 rounded-2xl flex flex-col gap-4">
+                    <h3 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Signal Breakdown</h3>
+                    <div className="space-y-3 flex-1 justify-center flex flex-col">
+                        <SignalBar label="Deep Work" value={empStats.deepWorkIndex} max={100} color="text-primary" icon="center_focus_strong" />
+                        <SignalBar
+                            label="Fragmentation"
+                            value={empStats.fragmentationScore ?? 0}
+                            max={100}
+                            color={(empStats.fragmentationScore ?? 0) > 70 ? 'text-error' : (empStats.fragmentationScore ?? 0) > 50 ? 'text-amber-600' : 'text-primary'}
+                            icon="bubble_chart"
+                        />
+                        <SignalBar label="Connection" value={empStats.connectionIndex ?? 50} max={100} color="text-tertiary" icon="hub" />
+                        <SignalBar
+                            label="Recovery Debt"
+                            value={empStats.recoveryDebt ?? 0}
+                            max={10}
+                            color={(empStats.recoveryDebt ?? 0) > 5 ? 'text-error' : (empStats.recoveryDebt ?? 0) > 2 ? 'text-amber-600' : 'text-primary'}
+                            icon="battery_alert"
+                        />
                     </div>
                 </div>
             </div>
 
-            {/* Sub-Score Gauges + Radar */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <GaugeBar label="Deep Work" value={empStats.deepWorkIndex} max={100} icon={<Target className="w-3.5 h-3.5" />} color="text-blue-400" unit="/ 100" />
-                    <GaugeBar label="Fragmentation" value={empStats.fragmentationScore ?? 0} max={100} icon={<Waves className="w-3.5 h-3.5" />} color={(empStats.fragmentationScore ?? 0) > 70 ? "text-rose-400" : (empStats.fragmentationScore ?? 0) > 50 ? "text-amber-400" : "text-emerald-400"} unit="/ 100" />
-                    <GaugeBar label="Connection" value={empStats.connectionIndex ?? 50} max={100} icon={<Link2 className="w-3.5 h-3.5" />} color="text-cyan-400" unit="/ 100" />
-                    <GaugeBar label="Recovery Debt" value={empStats.recoveryDebt ?? 0} max={10} icon={<BatteryCharging className="w-3.5 h-3.5" />} color={(empStats.recoveryDebt ?? 0) > 5 ? "text-rose-400" : (empStats.recoveryDebt ?? 0) > 2 ? "text-amber-400" : "text-emerald-400"} unit="hrs" />
-                </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl shadow-lg flex flex-col items-center">
-                    <h3 className="text-sm font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Wellness Radar</h3>
-                    <ResponsiveContainer width="100%" height={180}>
-                        <RadarChart data={radarData} outerRadius="70%">
-                            <PolarGrid stroke="#27272a" />
-                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#a1a1aa', fontSize: 11 }} />
-                            <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
-                            <Radar name="Wellness" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.15} strokeWidth={2} />
-                        </RadarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            {/* Driving Factors */}
+            {/* ── Driving Factors ── */}
             {factorTags.length > 0 && (
-                <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-sm">
-                    <h3 className="text-sm font-semibold text-zinc-400 mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" /> ML-Identified Driving Factors</h3>
+                <div className="glass-card p-5 rounded-2xl">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <h3 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">ML-Identified Driving Factors</h3>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                         {factorTags.map((f, i) => (
-                            <span key={i} className="text-xs font-medium bg-zinc-950 border border-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:border-zinc-600 transition-colors">
+                            <span key={i} className="text-xs font-medium bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-secondary-fixed-dim transition-colors">
                                 <Zap className="w-3 h-3 text-amber-500" /> {f}
                             </span>
                         ))}
@@ -230,172 +507,120 @@ export default function EmployeeDashboard({ user }: { user: AppUser }) {
                 </div>
             )}
 
-            {/* Performance History Chart — Multi-Signal */}
-            <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg">
-                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-white">
-                    <LineChartIcon className="w-5 h-5 text-emerald-500" /> 14-Day Performance & Wellness Trend
+            {/* ── Multi-Signal Trend Chart ── */}
+            <div className="glass-card p-6 rounded-2xl">
+                <h2 className="text-base font-bold font-headline text-on-surface mb-6 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-[20px]">ssid_chart</span>
+                    14-Day Multi-Signal Trend
                 </h2>
-                <div className="h-72 w-full">
+                <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={history} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             <defs>
-                                <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                                <linearGradient id="empBurnout" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#a83836" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="#a83836" stopOpacity={0} />
                                 </linearGradient>
-                                <linearGradient id="colorDeepWork" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                <linearGradient id="empDeep" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#305ea9" stopOpacity={0.18} />
+                                    <stop offset="95%" stopColor="#305ea9" stopOpacity={0} />
                                 </linearGradient>
-                                <linearGradient id="colorFrag" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2}/>
-                                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                                <linearGradient id="empFrag" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#d97706" stopOpacity={0.15} />
+                                    <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
                                 </linearGradient>
-                                <linearGradient id="colorConn" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2}/>
-                                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+                                <linearGradient id="empConn" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#625983" stopOpacity={0.15} />
+                                    <stop offset="95%" stopColor="#625983" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                            <XAxis dataKey="date" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(172,178,189,0.2)" vertical={false} />
+                            <XAxis dataKey="date" stroke="#595f69" fontSize={11} tickLine={false} axisLine={false} />
+                            <YAxis stroke="#595f69" fontSize={11} tickLine={false} axisLine={false} />
                             <Tooltip
-                                contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '0.5rem', color: '#f4f4f5' }}
+                                contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', borderColor: 'rgba(172,178,189,0.3)', borderRadius: '12px', color: '#2d333b' }}
                                 itemStyle={{ fontWeight: 500 }}
                             />
-                            <Area type="monotone" dataKey="burnoutIndex" name="Burnout Risk" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnout)" />
-                            <Area type="monotone" dataKey="deepWorkIndex" name="Deep Work %" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorDeepWork)" />
-                            <Area type="monotone" dataKey="fragmentationScore" name="Fragmentation" stroke="#f59e0b" strokeWidth={1.5} fillOpacity={1} fill="url(#colorFrag)" strokeDasharray="4 2" />
-                            <Area type="monotone" dataKey="connectionIndex" name="Connection" stroke="#06b6d4" strokeWidth={1.5} fillOpacity={1} fill="url(#colorConn)" strokeDasharray="4 2" />
+                            <Area type="monotone" dataKey="burnoutIndex" name="Burnout Risk" stroke="#a83836" strokeWidth={2.5} fillOpacity={1} fill="url(#empBurnout)" />
+                            <Area type="monotone" dataKey="deepWorkIndex" name="Deep Work" stroke="#305ea9" strokeWidth={2} fillOpacity={1} fill="url(#empDeep)" />
+                            <Area type="monotone" dataKey="fragmentationScore" name="Fragmentation" stroke="#d97706" strokeWidth={1.5} fillOpacity={1} fill="url(#empFrag)" strokeDasharray="4 2" />
+                            <Area type="monotone" dataKey="connectionIndex" name="Connection" stroke="#625983" strokeWidth={1.5} fillOpacity={1} fill="url(#empConn)" strokeDasharray="4 2" />
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
-            {/* Forecast + AI Narrative Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Forecast Card */}
-                {forecast && (
-                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-violet-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-                        <h2 className="text-xl font-semibold mb-5 flex items-center gap-2 relative z-10">
-                            <TrendingUp className="w-5 h-5 text-violet-400" /> Time-Series Forecast
-                        </h2>
-                        <div className="grid grid-cols-2 gap-4 relative z-10">
-                            <div className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800">
-                                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Current Probability</div>
-                                <div className="text-lg font-bold text-white">{(forecast.currentProb * 100).toFixed(1)}%</div>
-                            </div>
-                            <div className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800">
-                                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">EWMA Smoothed</div>
-                                <div className="text-lg font-bold text-violet-400">{(forecast.ewmaCurrent * 100).toFixed(1)}%</div>
-                            </div>
-                            <div className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800">
-                                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">7-Day Forecast (Avg)</div>
-                                <div className="text-lg font-bold text-amber-400">{(forecast.forecast7dAvg * 100).toFixed(1)}%</div>
-                                <div className="text-xs text-zinc-500 mt-0.5">max: {(forecast.forecast7dMax * 100).toFixed(1)}%</div>
-                            </div>
-                            <div className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800">
-                                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">14-Day Forecast (Avg)</div>
-                                <div className="text-lg font-bold text-rose-400">{(forecast.forecast14dAvg * 100).toFixed(1)}%</div>
-                                <div className="text-xs text-zinc-500 mt-0.5">max: {(forecast.forecast14dMax * 100).toFixed(1)}%</div>
-                            </div>
-                        </div>
-                        <div className="mt-4 flex items-center gap-4 text-sm relative z-10">
-                            <div className="flex items-center gap-2">
-                                <TrendIcon direction={forecast.trendDirection} />
-                                <span className={`font-medium ${trendColor(forecast.trendDirection)}`}>{trendLabel(forecast.trendDirection)}</span>
-                            </div>
-                            <div className="text-zinc-500">
-                                <span className="text-zinc-400 font-medium">{forecast.numChangepoints}</span> changepoints
-                            </div>
-                            <div className="text-zinc-500">
-                                volatility: <span className="text-zinc-400 font-medium">{forecast.avgVolatility.toFixed(3)}</span>
-                            </div>
-                        </div>
-                    </div>
-                )}
+            {/* ── Radar + Forecast Horizon ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                {/* AI Narrative Card */}
-                {narrative ? (
-                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 relative z-10">
-                            <Brain className="w-5 h-5 text-emerald-500" /> AI Risk Narrative
-                        </h2>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <RiskBadge tier={narrative.riskTier} />
-                                <span className="text-sm text-zinc-400">Ensemble: {(narrative.ensembleProb * 100).toFixed(1)}%</span>
-                            </div>
-                            <p className="text-sm text-zinc-300 leading-relaxed bg-zinc-950/50 p-4 rounded-xl border border-zinc-800/50 italic">
-                                "{narrative.narrative}"
-                            </p>
+                {/* Wellness Radar */}
+                <div className="glass-card p-6 rounded-2xl">
+                    <h3 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Wellness Radar</h3>
+                    <ResponsiveContainer width="100%" height={220}>
+                        <RadarChart data={radarData} outerRadius="70%">
+                            <PolarGrid stroke="rgba(172,178,189,0.2)" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#595f69', fontSize: 11, fontFamily: 'Inter' }} />
+                            <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
+                            <Radar name="Wellness" dataKey="value" stroke="#305ea9" fill="#305ea9" fillOpacity={0.12} strokeWidth={2} />
+                        </RadarChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Forecast Horizon */}
+                {forecast ? (
+                    <div className="glass-card p-6 rounded-2xl">
+                        <h3 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest mb-5">Burnout Forecast Horizon</h3>
+                        <ForecastHorizon forecast={forecast} />
+                        {/* EWMA current */}
+                        <div className="mt-4 p-3 rounded-xl bg-surface-container-low flex items-center justify-between text-sm">
+                            <span className="text-on-surface-variant">EWMA Smoothed</span>
+                            <span className="font-bold text-tertiary">{(forecast.ewmaCurrent * 100).toFixed(1)}%</span>
                         </div>
                     </div>
                 ) : (
-                    /* Fallback — AI Schedule (no narrative available) */
-                    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl relative overflow-hidden shadow-lg">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-                        <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 relative z-10">
-                            <Brain className="w-5 h-5 text-emerald-500" /> AI Optimized Schedule
-                        </h2>
-                        <div className="space-y-4 relative z-10">
-                            {[
-                                { time: "09:00 - 11:30", label: "Deep Work: Primary Tasks", type: "deep", reason: "Placed early when cognitive energy is statistically highest.", icon: <Activity className="w-4 h-4" /> },
-                                { time: "11:30 - 12:00", label: "Mandatory Unplug", type: "break", reason: "Required break to reduce context-switching fatigue.", icon: <Coffee className="w-4 h-4" /> },
-                                { time: "12:00 - 12:45", label: "Task: Code Review", type: "task", reason: "Lower cognitive load task bridging to lunch.", icon: <Briefcase className="w-4 h-4" /> },
-                                { time: "14:00 - 14:30", label: "Admin: Team Sync", type: "admin", reason: "Batched meetings to preserve uninterrupted afternoon blocks.", icon: <User className="w-4 h-4" /> },
-                            ].map((slot, i) => {
-                                let colorClasses = "";
-                                if (slot.type === 'deep') colorClasses = "border-l-blue-500 bg-blue-950/20 text-blue-100 border-blue-900/30";
-                                if (slot.type === 'break') colorClasses = "border-l-zinc-500 bg-zinc-800/50 text-zinc-300 border-zinc-700/50";
-                                if (slot.type === 'task') colorClasses = "border-l-emerald-500 bg-emerald-950/20 text-emerald-100 border-emerald-900/30";
-                                if (slot.type === 'admin') colorClasses = "border-l-amber-500 bg-amber-950/20 text-amber-100 border-amber-900/30";
-                                return (
-                                    <div key={i} className={`p-4 rounded-r-xl border-l-4 border-y border-r ${colorClasses} hover:brightness-110 transition-all`}>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div className="font-semibold text-sm flex items-center gap-2">{slot.icon} {slot.label}</div>
-                                            <div className="text-xs font-mono opacity-80 bg-black/20 px-2 py-0.5 rounded">{slot.time}</div>
-                                        </div>
-                                        <p className="text-xs opacity-70 mt-2 flex items-start gap-1.5 leading-relaxed">
-                                            <Zap className="w-3.5 h-3.5 shrink-0 mt-0.5 text-current opacity-80" />
-                                            {slot.reason}
-                                        </p>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <div className="mt-8 pt-5 border-t border-zinc-800 flex items-center gap-3 text-sm font-medium text-emerald-400 bg-emerald-950/10 p-3 rounded-lg">
-                            <div className="bg-emerald-500/20 p-1.5 rounded-full"><Check className="w-4 h-4" /></div>
-                            Following this schedule reduces daily burnout probability by 18%.
-                        </div>
+                    <div className="glass-card p-6 rounded-2xl flex items-center justify-center text-on-surface-variant text-sm">
+                        No forecast data available yet.
                     </div>
                 )}
             </div>
 
-            {/* Anomalies Timeline */}
-            {anomalies.length > 0 && (
-                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-lg">
-                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-amber-500" /> Anomaly Detection Log
-                    </h2>
-                    <div className="space-y-3">
-                        {anomalies.slice(-5).reverse().map((a, i) => (
-                            <div key={i} className="flex items-center gap-4 p-3 bg-zinc-950/50 rounded-xl border border-zinc-800 hover:border-amber-800/50 transition-colors">
-                                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${a.isolationScore > 0.7 ? 'bg-rose-500' : a.isolationScore > 0.4 ? 'bg-amber-500' : 'bg-yellow-500'}`}></div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm text-zinc-300 font-medium">{a.date}</div>
-                                    {a.triggerFeature && <div className="text-xs text-zinc-500 truncate">Trigger: {a.triggerFeature}</div>}
-                                </div>
-                                <div className="flex gap-4 text-xs text-zinc-500 shrink-0">
-                                    <span>ISO: <span className="text-zinc-300 font-medium">{a.isolationScore.toFixed(2)}</span></span>
-                                    <span>Z: <span className="text-zinc-300 font-medium">{a.zScoreMax.toFixed(2)}</span></span>
-                                    <span>Shift: <span className="text-zinc-300 font-medium">{a.patternShift.toFixed(2)}</span></span>
-                                </div>
-                            </div>
-                        ))}
+            {/* ── Today's Cognitive Schedule ── */}
+            <div className="glass-card p-6 rounded-2xl">
+                <div className="flex items-center gap-2 mb-5">
+                    <span className="material-symbols-outlined text-primary text-[20px]">schedule</span>
+                    <h3 className="text-base font-bold font-headline text-on-surface">Today's Cognitive Load Map</h3>
+                </div>
+                <DailyScheduleStrip stats={empStats} />
+                <div className="mt-4 p-3 rounded-xl bg-primary/5 border border-primary/10 flex items-center gap-3 text-sm">
+                    <span className="material-symbols-outlined text-primary text-[18px]">lightbulb</span>
+                    <p className="text-on-primary-container">
+                        Based on your current metrics, schedule deep work <strong>before noon</strong> when cognitive load is lowest.
+                    </p>
+                </div>
+            </div>
+
+            {/* ── AI Risk Narrative ── */}
+            {narrative && (
+                <div className="glass-card p-6 rounded-2xl">
+                    <div className="flex items-center gap-3 mb-4">
+                        <span className="material-symbols-outlined text-tertiary text-[20px]">auto_awesome</span>
+                        <h3 className="text-base font-bold font-headline text-on-surface">AI Risk Narrative</h3>
+                        <RiskBadge tier={narrative.riskTier} />
                     </div>
+                    <p className="text-sm text-on-surface leading-relaxed bg-primary/5 p-4 rounded-xl border border-primary/10 italic">
+                        "{narrative.narrative}"
+                    </p>
+                </div>
+            )}
+
+            {/* ── Anomaly Timeline ── */}
+            {anomalies.length > 0 && (
+                <div className="glass-card p-6 rounded-2xl">
+                    <div className="flex items-center gap-2 mb-5">
+                        <AlertTriangle className="w-5 h-5 text-amber-500" />
+                        <h3 className="text-base font-bold font-headline text-on-surface">Anomaly Detection Log</h3>
+                    </div>
+                    <AnomalyTimeline anomalies={anomalies} />
                 </div>
             )}
         </div>
