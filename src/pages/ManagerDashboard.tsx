@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, Minus, Check, X, Shield, Cpu, Sparkles, Arrow
 import { AppUser, EmployeeStat, Suggestion, EmployeeHistory, Anomaly, Forecast, Narrative, EnsembleSummary } from '../types';
 import { fetchEmployees, fetchSuggestions, fetchEmployeeHistory, fetchAnomalies, fetchForecast, fetchNarratives, fetchEnsembleSummary, askPulse } from '../api';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import FederatedLearningSimulation from '../components/FederatedLearningSimulation';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -134,7 +135,7 @@ function NavLink({ icon, label, active, badge, onClick }: { icon: string; label:
 }
 
 // ─── Window type definitions ────────────────────────────────────────────────
-type ActiveWindow = 'overview' | 'employee' | 'optimizer' | 'team' | 'askpulse';
+type ActiveWindow = 'overview' | 'employee' | 'optimizer' | 'team' | 'askpulse' | 'federated';
 
 // ─── Main Manager Dashboard ─────────────────────────────────────────────────
 interface ManagerDashboardProps {
@@ -244,6 +245,7 @@ export default function ManagerDashboard({ user, onLogout }: ManagerDashboardPro
         optimizer: 'AI Task Optimizer',
         team: 'Team Management',
         askpulse: 'Ask Pulse Copilot',
+        federated: 'Federated Learning Simulation',
     };
 
     return (
@@ -270,6 +272,8 @@ export default function ManagerDashboard({ user, onLogout }: ManagerDashboardPro
                     <NavLink icon="auto_awesome" label="Task Optimizer" active={activeWindow === 'optimizer'} badge={pendingSuggestions.length} onClick={() => setActiveWindow('optimizer')} />
                     <NavLink icon="groups" label="Team" active={activeWindow === 'team'} onClick={() => setActiveWindow('team')} />
                     <NavLink icon="forum" label="Ask Pulse" active={activeWindow === 'askpulse'} onClick={() => setActiveWindow('askpulse')} />
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mt-4 mb-2 px-1">Deep Intelligence</p>
+                    <NavLink icon="hub" label="Federated Learning" active={activeWindow === 'federated'} onClick={() => setActiveWindow('federated')} />
                 </nav>
 
                 {/* Bottom */}
@@ -1113,6 +1117,13 @@ export default function ManagerDashboard({ user, onLogout }: ManagerDashboardPro
                                 </form>
                             </div>
                         </div>
+                    )}
+
+                    {/* ═══════════════════════════════════════════════════
+                        WINDOW: FEDERATED LEARNING SIMULATION
+                       ═══════════════════════════════════════════════════ */}
+                    {activeWindow === 'federated' && (
+                        <FederatedLearningSimulation />
                     )}
                 </div>
             </main>

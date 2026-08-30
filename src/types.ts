@@ -82,3 +82,59 @@ export interface EnsembleSummary {
     totalEmployees: number;
     modelsAvailable: string[];
 }
+
+export interface FederatedClientMetric {
+    client_id: string;
+    name: string;
+    train_loss: number;
+    train_accuracy: number;
+    val_auc: number;
+    val_loss: number;
+    train_samples: number;
+    val_samples: number;
+}
+
+export interface FederatedRound {
+    round: number;
+    train_loss: number;
+    train_accuracy: number;
+    val_auc: number;
+    participating_clients: number;
+    total_clients: number;
+    client_metrics: Record<string, FederatedClientMetric>;
+}
+
+export interface FederatedClientInfo {
+    client_id: string;
+    name: string;
+    employees: string[];
+    num_employees: number;
+    train_samples: number;
+    val_samples: number;
+}
+
+export interface FederatedGlobalModelInfo {
+    architecture: string;
+    input_shape: number[];
+    total_parameters?: number;
+    final_val_auc?: number;
+    final_train_loss?: number;
+    final_train_accuracy?: number;
+    aggregation_strategy?: string;
+    model_path?: string;
+}
+
+export interface FederatedStatusResponse {
+    status: 'not_started' | 'training' | 'completed' | 'failed';
+    current_round: number;
+    total_rounds: number;
+    current_stage: string;
+    local_epochs?: number;
+    batch_size?: number;
+    num_clients: number;
+    clients: FederatedClientInfo[];
+    rounds: FederatedRound[];
+    global_model: FederatedGlobalModelInfo;
+    updated_at?: string;
+}
+

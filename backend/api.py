@@ -20,8 +20,8 @@ from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
 
-# DO NOT COMMIT SECRETS IN PRODUCTION - configuring based on user provided key
-client = genai.Client(api_key="AIzaSyAe0U-jW6FRYkp7M99OcLDX0v1F1lWKFEc")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 app = FastAPI(
     title="PulseIQ API",
@@ -580,7 +580,7 @@ def llm_generate_narrative(employee_id: str):
             f"- Recovery Debt: {emp['recoveryDebt']}/100\n"
             f"Provide insightful synthesis. Do not just list numbers. Identify one core challenge and wrap with a supportive tone."
         )
-        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+        response = client.models.generate_content(model="gemini-3.6-flash", contents=prompt)
         return {"employeeId": employee_id, "narrative": response.text.strip()}
     except Exception as e:
         return {"error": str(e), "narrative": f"Google API Error: {str(e)}"}
@@ -611,8 +611,66 @@ def llm_ask_pulse(req: AskPulseRequest):
             f"--- MANAGER'S QUERY ---\n{req.query}\n"
         )
         
-        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+        response = client.models.generate_content(model="gemini-3.6-flash", contents=prompt)
         return {"response": response.text.strip()}
     except Exception as e:
         return {"error": str(e), "response": f"Google API Error: {str(e)}"}
+
+
+# ---------------------------------------------------------------------------
+# Federated Learning Endpoints
+# ---------------------------------------------------------------------------
+import threading
+_fl_lock = threading.Lock()
+_fl_thread: Optional[threading.Thread] = None
+
+@app.get("/api/federated-learning/status")
+def get_fl_status():
+    """Returns the latest federated learning simulation state and round metrics."""
+    from federated_learning import load_training_history
+    history = load_training_history()
+    if not history:
+        return {
+            "status": "not_started",
+            "current_round": 0,
+            "total_rounds": 5,
+            "current_stage": "idle",
+            "num_clients": 3,
+            "clients": [
+                {"client_id": "Client_0", "name": "Client 1 (Platform & Core)", "employees": [f"E{i:03d}" for i in range(1, 11)], "num_employees": 10, "train_samples": 368, "val_samples": 92},
+                {"client_id": "Client_1", "name": "Client 2 (Engineering Group A)", "employees": [f"E{i:03d}" for i in range(11, 21)], "num_employees": 10, "train_samples": 368, "val_samples": 92},
+                {"client_id": "Client_2", "name": "Client 3 (Engineering Group B)", "employees": [f"E{i:03d}" for i in range(21, 31)], "num_employees": 10, "train_samples": 368, "val_samples": 92}
+            ],
+            "rounds": [],
+            "global_model": {
+                "architecture": "Bidirectional LSTM (64) → LSTM (32) → Dense (16) → Dropout (0.3) → Dense (1)",
+                "input_shape": [14, 28],
+                "aggregation_strategy": "FedAvg (Sample-Weighted Parameter Averaging)",
+            }
+        }
+    return history
+
+@app.post("/api/federated-learning/train")
+def trigger_fl_training():
+    """Triggers an asynchronous Federated Learning training run."""
+    global _fl_thread
+    with _fl_lock:
+        from federated_learning import load_training_history, run_full_federated_pipeline
+        current_history = load_training_history()
+        if current_history and current_history.get("status") == "training":
+            return {"status": "already_running", "message": "Federated training is already in progress"}
+        
+        if _fl_thread and _fl_thread.is_alive():
+            return {"status": "already_running", "message": "Federated training is already running"}
+
+        def _worker():
+            try:
+                run_full_federated_pipeline()
+            except Exception as e:
+                print(f"[ERROR] Live federated training run failed: {e}")
+
+        _fl_thread = threading.Thread(target=_worker, daemon=True)
+        _fl_thread.start()
+        return {"status": "started", "message": "Federated learning training started asynchronously"}
+
 

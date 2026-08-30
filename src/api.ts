@@ -112,3 +112,29 @@ export async function askPulse(query: string, managerId?: string): Promise<strin
         return "An error occurred connecting to the intelligence server.";
     }
 }
+
+export async function fetchFederatedStatus(): Promise<any> {
+    try {
+        const res = await fetch(`${API_BASE}/federated-learning/status`);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (e) {
+        console.error("Fetch FL Status Error:", e);
+        return null;
+    }
+}
+
+export async function triggerFederatedTraining(): Promise<any> {
+    try {
+        const res = await fetch(`${API_BASE}/federated-learning/train`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) return { status: 'failed' };
+        return await res.json();
+    } catch (e) {
+        console.error("Trigger FL Training Error:", e);
+        return { status: 'failed', error: String(e) };
+    }
+}
+

@@ -253,23 +253,48 @@ def main():
 
     print(f"  Created {len(X)} windows of size {WINDOW_SIZE}")
 
-    # Normalize features
-    X_norm, feat_means, feat_stds = normalize_features(X)
+    # Normalize features consistently
+    X_all, y_all, metadata = create_windows(features_by_emp, scores_by_emp)
+    if len(X_all) == 0:
+        print("  [WARN] Not enough data to create training windows")
+        return
 
-    # Train/validation split (80/20, shuffled)
-    indices = np.random.RandomState(42).permutation(len(X_norm))
-    split = int(len(indices) * 0.8)
-    train_idx, val_idx = indices[:split], indices[split:]
+    print(f"  Created {len(X_all)} total windows of size {WINDOW_SIZE}")
+    _, feat_means, feat_stds = normalize_features(X_all)
 
-    X_train, y_train = X_norm[train_idx], y[train_idx]
-    X_val, y_val = X_norm[val_idx], y[val_idx]
+    # Federated Learning: Partition 30 employees across 3 clients
+    from federated_learning import partition_employees, train_federated
 
-    # Build and train model
-    model, history = train_model(X_train, y_train, X_val, y_val)
+    NUM_CLIENTS = 3
+    FL_ROUNDS = 5
+    LOCAL_EPOCHS = 3
 
-    # Predict on ALL data (not just validation)
-    print("\n  Generating predictions for all employees...")
-    predictions = model.predict(X_norm, verbose=0).flatten()
+    client_datasets, _ = partition_employees(
+        features_by_emp=features_by_emp,
+        scores_by_emp=scores_by_emp,
+        num_clients=NUM_CLIENTS,
+        window_size=WINDOW_SIZE,
+        feat_means=feat_means,
+        feat_stds=feat_stds,
+    )
+
+    # Run Flower Federated Training (FedAvg)
+    model = train_federated(
+        model_builder_fn=build_lstm_model,
+        client_datasets=client_datasets,
+        input_shape=(WINDOW_SIZE, len(LSTM_FEATURES)),
+        num_rounds=FL_ROUNDS,
+        local_epochs=LOCAL_EPOCHS,
+        batch_size=BATCH_SIZE,
+        verbose=True,
+    )
+
+    # Predict on ALL data using the aggregated global model
+    print("\n  Generating predictions for all employees using Federated Global Model...")
+    n_samples, n_steps, n_features = X_all.shape
+    X_flat = X_all.reshape(-1, n_features)
+    X_all_norm = ((X_flat - feat_means) / feat_stds).reshape(n_samples, n_steps, n_features)
+    predictions = model.predict(X_all_norm, verbose=0).flatten()
 
     # Build output
     output = []
@@ -308,12 +333,12 @@ def main():
             w.writeheader()
             w.writerows(output)
 
-    # Save the model
+    # Save the global federated model
     MODEL_DIR.mkdir(exist_ok=True)
     model_path = MODEL_DIR / "lstm_burnout_model.keras"
     try:
         model.save(str(model_path))
-        print(f"\n  Model saved → {model_path}")
+        print(f"\n  Federated Global Model saved → {model_path}")
     except Exception as e:
         print(f"\n  [WARN] Could not save model: {e}")
 
@@ -321,9 +346,9 @@ def main():
     norm_path = MODEL_DIR / "lstm_normalization.npz"
     np.savez(str(norm_path), means=feat_means, stds=feat_stds)
 
-    print(f"\n  LSTM predictions complete:")
+    print(f"\n  Federated LSTM predictions complete:")
     print(f"    Output → {OUTPUT_FILE}")
-    print(f"    {len(output)} predictions generated")
+    print(f"    {len(output)} predictions generated across {len(features_by_emp)} employees")
 
     # Summary statistics
     probs = [o["lstm_burnout_prob"] for o in output]

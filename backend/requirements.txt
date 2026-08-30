@@ -23,8 +23,9 @@ shap                  # SHAP feature importance explanations
 # --- Time-Series Analysis ---
 statsmodels           # ARIMA, seasonal decomposition, statistical tests
 
-# --- Deep Learning ---
-# tensorflow            # LSTM bidirectional model for sequential prediction
+# --- Deep Learning & Federated Learning ---
+tensorflow            # LSTM bidirectional model for sequential prediction
+flwr                  # Flower federated learning framework
 
 # --- Visualization (optional, for reports) ---
 matplotlib
