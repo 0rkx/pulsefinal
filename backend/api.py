@@ -12,7 +12,7 @@ Serves all PulseIQ data to the React frontend, including:
 
 import os
 import pandas as pd
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -21,7 +21,10 @@ from google import genai
 from google.genai import types
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-client = genai.Client(api_key=GEMINI_API_KEY)
+
+client = None
+if GEMINI_API_KEY:
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
 app = FastAPI(
     title="PulseIQ API",
@@ -537,6 +540,11 @@ def llm_draft_message(req: MessageDraftRequest):
     from a manager to an employee based on PulseIQ recommendation output.
     """
     try:
+        if client is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Gemini API key is not configured"
+            )
         prompt = (
             f"You are an empathetic and professional management assistant.\n"
             f"Draft a polite, supportive, and non-confrontational direct message (Slack style) "
@@ -549,6 +557,8 @@ def llm_draft_message(req: MessageDraftRequest):
         )
         response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
         return {"draft": response.text.strip()}
+    except HTTPException:
+        raise
     except Exception as e:
         return {"error": str(e), "draft": f"Google API Error: {str(e)}"}
 
@@ -569,6 +579,11 @@ def llm_generate_narrative(employee_id: str):
         return {"error": "Employee not found."}
 
     try:
+        if client is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Gemini API key is not configured"
+            )
         prompt = (
             f"You are an empathetic organizational psychologist analyzing an employee's well-being metrics.\n"
             f"Write a concise, 2-3 sentence narrative summarizing the current state of '{emp['name']}' ({emp['role']}).\n"
@@ -582,6 +597,8 @@ def llm_generate_narrative(employee_id: str):
         )
         response = client.models.generate_content(model="gemini-3.6-flash", contents=prompt)
         return {"employeeId": employee_id, "narrative": response.text.strip()}
+    except HTTPException:
+        raise
     except Exception as e:
         return {"error": str(e), "narrative": f"Google API Error: {str(e)}"}
 
@@ -597,6 +614,11 @@ def llm_ask_pulse(req: AskPulseRequest):
     simulating a RAG architecture over the internal API.
     """
     try:
+        if client is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Gemini API key is not configured"
+            )
         # Gather contextual data (simulating RAG context retrieval)
         emps = get_employees(req.manager_id)
         suggestions = get_suggestions(req.manager_id)
@@ -613,6 +635,8 @@ def llm_ask_pulse(req: AskPulseRequest):
         
         response = client.models.generate_content(model="gemini-3.6-flash", contents=prompt)
         return {"response": response.text.strip()}
+    except HTTPException:
+        raise
     except Exception as e:
         return {"error": str(e), "response": f"Google API Error: {str(e)}"}
 
